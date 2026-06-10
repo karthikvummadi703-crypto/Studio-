@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   signInWithEmailAndPassword, 
-  signInAnonymously 
+  signInAnonymously,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +44,40 @@ export default function LoginPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        await setDoc(userRef, {
+          fullName: user.displayName || 'Eco Warrior',
+          email: user.email || '',
+          greenPoints: 0,
+          sustainabilityScore: 0,
+          level: 'Seedling',
+          createdAt: new Date().toISOString(),
+          completedChallenges: []
+        });
+      }
+      
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Google Login Failed",
+        description: error.message,
+      });
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -158,19 +195,29 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative py-4">
+          <div className="relative py-2">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100"></span></div>
             <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-[0.2em]"><span className="bg-white px-2 text-zinc-400">Or</span></div>
           </div>
 
-          <Button 
-            variant="outline" 
-            className="w-full h-12 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2"
-            onClick={handleDemoMode}
-            disabled={demoLoading}
-          >
-            {demoLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Sparkles className="h-4 w-4" /> Enter Demo Mode</>}
-          </Button>
+          <div className="grid grid-cols-2 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-12 border-zinc-200 hover:bg-zinc-50 font-bold rounded-xl flex items-center justify-center gap-2"
+              onClick={handleGoogleLogin}
+              disabled={googleLoading}
+            >
+              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Google</>}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-12 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2"
+              onClick={handleDemoMode}
+              disabled={demoLoading}
+            >
+              {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4" /> Demo</>}
+            </Button>
+          </div>
         </CardContent>
 
         <CardFooter className="p-10 pt-0 flex flex-col gap-4 text-center">

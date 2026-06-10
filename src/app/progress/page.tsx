@@ -27,7 +27,7 @@ export default function ProgressPage() {
     setMounted(true);
   }, []);
 
-  // Efficiency: Stabilized Firestore Query
+  // 1. Strictly Isolated Personal History
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(
@@ -37,21 +37,20 @@ export default function ProgressPage() {
     );
   }, [db, user]);
   
-  const { data: records, isLoading } = useCollection<any>(recordsQuery);
+  const { data: records } = useCollection<any>(recordsQuery);
 
-  // Efficiency: Optimized data processing for charts
+  // 2. Optimized Chart Data
   const chartData = useMemo(() => {
     if (!records?.length || !mounted) return [];
     return records.map((r: any) => ({
       date: new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      emissions: Number(r.co2 || r.totalEmissions || 0).toFixed(2),
-      goal: 2.5 
+      emissions: Number(r.co2 || 0).toFixed(2),
+      goal: 1.5 // Personal reduction target baseline
     }));
   }, [records, mounted]);
 
   const hasData = useMemo(() => chartData.length > 0, [chartData]);
 
-  // Code Quality: Decoupled Achievement component
   const Achievement = useCallback(({ icon: Icon, title, date, color, active }: any) => (
     <div className={cn(
       "flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500",
@@ -68,6 +67,8 @@ export default function ProgressPage() {
       </div>
     </div>
   ), []);
+
+  if (!mounted) return null;
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-in fade-in duration-1000">
@@ -96,7 +97,7 @@ export default function ProgressPage() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-black uppercase tracking-[0.3em]">No Telemetry Detected</p>
-                  <p className="text-sm max-w-[240px] leading-relaxed">Execute at least three impact audits to initialize trend analysis visualization.</p>
+                  <p className="text-sm max-w-[240px] leading-relaxed">Execute at least one impact audit to initialize trend analysis visualization.</p>
                 </div>
               </div>
             ) : (

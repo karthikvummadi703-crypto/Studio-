@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useUser, useDoc, useCollection, useFirestore } from '@/firebase';
-import { doc, query, collection, limit, where } from 'firebase/firestore';
+import { doc, query, collection, limit, where, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // 1. Data Streams from Firestore
+  // 1. Data Streams from Firestore - Strictly Isolated by userId
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc<any>(profileRef);
 
@@ -41,6 +41,7 @@ export default function Dashboard() {
     return query(
       collection(db, 'activities'), 
       where('userId', '==', user.uid), 
+      orderBy('timestamp', 'desc'),
       limit(5)
     );
   }, [db, user]);
@@ -51,6 +52,7 @@ export default function Dashboard() {
     return query(
       collection(db, 'calculator_records'), 
       where('userId', '==', user.uid), 
+      orderBy('timestamp', 'desc'),
       limit(10)
     );
   }, [db, user]);
@@ -63,13 +65,11 @@ export default function Dashboard() {
   const challengesCompletedCount = profile?.completedChallenges?.length || 0;
   
   // KPI Calculations
-  const totalEmissions = records?.[0]?.totalEmissions || 0;
+  const latestCO2 = records?.[0]?.co2 || 0;
   const totalSaved = useMemo(() => {
     if (!records) return 0;
-    return records.reduce((acc: number, curr: any) => {
-      const baseline = 500;
-      return acc + (curr.totalEmissions < baseline ? baseline - curr.totalEmissions : 0);
-    }, 0);
+    // Mock logic: assume any activity with co2 < 2kg is a "save" relative to car baseline
+    return records.reduce((acc: number, curr: any) => acc + (curr.co2 < 2 ? (2 - curr.co2) : 0), 0);
   }, [records]);
 
   // 3. Sequential Challenge Logic
@@ -91,7 +91,6 @@ export default function Dashboard() {
     });
   }, [mounted]);
 
-  // Prevent UI flashing or hydration mismatch
   if (!mounted) return null;
 
   return (
@@ -134,7 +133,7 @@ export default function Dashboard() {
               <HeroMetric label="Score" value={score.toFixed(0)} color="text-primary" />
               <HeroMetric label="Green Points" value={points.toString()} color="text-emerald-600" />
               <HeroMetric label="Current Level" value={level} color="text-foreground" isSmall />
-              <HeroMetric label="Reduction" value={hasData ? "12" : "0"} subValue="%" color="text-emerald-500" />
+              <HeroMetric label="Latest Impact" value={latestCO2.toFixed(1)} subValue="KG" color="text-emerald-500" />
             </div>
           </div>
 
@@ -200,10 +199,10 @@ export default function Dashboard() {
             </Card>
 
             <div className="grid grid-cols-1 gap-6">
-              <KPICard label="Carbon Emissions" value={totalEmissions.toFixed(1)} unit="kg" icon={TrendingDown} color="text-red-500" />
-              <KPICard label="Carbon Saved" value={totalSaved.toFixed(1)} unit="kg" icon={Leaf} color="text-emerald-500" />
-              <KPICard label="Green Points" value={points.toString()} unit="pts" icon={Sparkles} color="text-primary" />
-              <KPICard label="Completed" value={challengesCompletedCount.toString()} unit="tasks" icon={CheckCircle2} color="text-primary" />
+              <KPICard label="Recent Audit" value={latestCO2.toFixed(1)} unit="kg" icon={TrendingDown} color="text-red-500" />
+              <KPICard label="Estimated Saved" value={totalSaved.toFixed(1)} unit="kg" icon={Leaf} color="text-emerald-500" />
+              <KPICard label="Total Reward" value={points.toString()} unit="pts" icon={Sparkles} color="text-primary" />
+              <KPICard label="History Size" value={records.length.toString()} unit="logs" icon={CheckCircle2} color="text-primary" />
             </div>
           </div>
         </>
