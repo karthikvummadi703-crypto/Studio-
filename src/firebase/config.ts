@@ -6,10 +6,10 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 const firebaseConfig = {
   apiKey: "AIzaSyCiAHwWhFFF7RyOByxe4PsYxOSy8jgKZAo",
   authDomain: "studio-9772282798-f7257.firebaseapp.com",
-  projectId: "studio-9772282798-f7257",
+  projectId: "studio-9772282798",
   storageBucket: "studio-9772282798-f7257.firebasestorage.app",
   messagingSenderId: "9772282798",
-  appId: "1:9772282798:web:48a7b8e96f5e4d3c2b1a", // Using inferred App ID based on project structure
+  appId: "1:9772282798:web:48a7b8e96f5e4d3c2b1a",
 };
 
 let app: FirebaseApp;

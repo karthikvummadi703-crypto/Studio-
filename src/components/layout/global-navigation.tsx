@@ -44,13 +44,13 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // STABLE SHELL: We keep the root structure identical on server and client.
-  // We only conditionally render the inner parts (sidebar, header) after mounting.
+  // STABLE SHELL: The structure and class names MUST be identical on server/client initial render.
+  // We use the same wrapper classes regardless of showNav to prevent hydration mismatch.
   const showNav = mounted && !isAuthPage && user;
 
   return (
     <div className="flex h-screen overflow-hidden w-full bg-background">
-      {/* Sidebar - Rendered inside a stable shell */}
+      {/* Sidebar - Conditionally rendered content, but the parent structure remains stable */}
       {showNav && (
         <nav 
           className={cn(
@@ -62,10 +62,10 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         </nav>
       )}
 
-      {/* Main Content Area - Stable container to prevent hydration mismatch */}
+      {/* Main Content Area - Stable container with fixed classes */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {showNav && (
-          <header className="h-16 border-b border-black/5 bg-white/40 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 transition-all">
+          <header className="h-16 border-b border-black/5 bg-white/40 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleSidebar}
@@ -102,11 +102,10 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
           </header>
         )}
         
-        {/* Main content scroll area */}
         <main className="flex-1 overflow-y-auto custom-scrollbar relative">
           <div className={cn(
             "max-w-7xl mx-auto p-4 sm:p-8 pb-24",
-            !isAuthPage && mounted && "bg-white/10 backdrop-blur-[2px] min-h-full"
+            mounted && !isAuthPage && "bg-white/10 backdrop-blur-[2px] min-h-full"
           )}>
             {children}
           </div>
