@@ -15,20 +15,20 @@ import {
   Footprints, 
   Zap, 
   TramFront,
-  Sparkles,
-  ArrowRight,
   Check,
   X,
   Loader2,
   Info,
-  Calculator as CalculatorIcon
+  MapPin,
+  Navigation,
+  ArrowRight
 } from 'lucide-react';
 import { collection, doc, updateDoc, increment, addDoc } from 'firebase/firestore';
 import { useUser, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-// Custom SVG for Motorcycle to avoid build errors
+// Custom SVG for Motorcycle to avoid build errors (lucide-react doesn't have a Motorcycle icon)
 const MotorcycleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
@@ -78,7 +78,11 @@ export default function CalculatorPage() {
 
   const handleCalculate = () => {
     if (!start || !destination) {
-      toast({ title: "Missing Information", description: "Please enter both start and destination locations.", variant: "destructive" });
+      toast({ 
+        title: "Missing Information", 
+        description: "Please enter both start and destination locations.", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -105,7 +109,7 @@ export default function CalculatorPage() {
         timestamp: new Date().toISOString()
       });
       setCalculating(false);
-    }, 800);
+    }, 600);
   };
 
   const handleSave = async () => {
@@ -136,8 +140,8 @@ export default function CalculatorPage() {
       });
 
       toast({
-        title: "Impact Saved!",
-        description: `Successfully added ${activeResult.points} Green Points to your account.`,
+        title: "Impact Saved",
+        description: `Successfully added ${activeResult.points} Green Points.`,
       });
 
       // Reset
@@ -145,7 +149,11 @@ export default function CalculatorPage() {
       setStart('');
       setDestination('');
     } catch (e) {
-      toast({ title: "Error", description: "Could not save your impact data.", variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: "Could not save your impact data.", 
+        variant: "destructive" 
+      });
     } finally {
       setSaving(false);
     }
@@ -161,172 +169,190 @@ export default function CalculatorPage() {
   }, [activeResult]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20">
-      <header className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest">
-          <Zap className="h-3 w-3" /> 10-Second Impact Audit
-        </div>
-        <h1 className="text-4xl font-headline font-bold text-foreground">Carbon Calculator</h1>
-        <p className="text-muted-foreground text-lg max-w-2xl">
-          Enter your route details to instantly estimate your environmental impact.
+    <div className="max-w-4xl mx-auto space-y-12 py-8 px-4 sm:px-6 animate-in fade-in duration-700">
+      {/* Page Header */}
+      <header className="text-center space-y-3">
+        <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
+          Carbon Impact Calculator
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          Calculate the environmental impact of your journey in seconds.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* INPUT SECTION */}
-        <Card className="lg:col-span-7 glass-card border-none rounded-[2rem] overflow-hidden">
-          <CardHeader className="bg-primary/5 p-8 border-b border-black/5">
-            <CardTitle className="font-headline text-xl">Journey Audit</CardTitle>
-          </CardHeader>
-          <CardContent className="p-10 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Starting Location</Label>
+      {/* Main Form Card */}
+      <Card className="bg-white/90 border border-zinc-200 shadow-sm rounded-3xl overflow-hidden">
+        <CardContent className="p-8 sm:p-12 space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Starting Location</Label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <Input 
                   placeholder="e.g., Mumbai" 
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
-                  className="h-14 bg-white/50 border-black/5 rounded-2xl focus-visible:ring-primary/20 text-lg"
+                  className="pl-11 h-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary/20"
                 />
               </div>
-              <div className="space-y-3">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Destination</Label>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Destination</Label>
+              <div className="relative">
+                <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <Input 
                   placeholder="e.g., Pune" 
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="h-14 bg-white/50 border-black/5 rounded-2xl focus-visible:ring-primary/20 text-lg"
+                  className="pl-11 h-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary/20"
                 />
               </div>
             </div>
+          </div>
 
-            <div className="space-y-6">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Transport Method</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {TRANSPORT_MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setSelectedMode(mode.id)}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-3",
-                      selectedMode === mode.id 
-                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105" 
-                        : "bg-white/40 border-black/5 text-muted-foreground hover:bg-white/60"
-                    )}
-                  >
-                    <mode.icon className="h-6 w-6" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">{mode.label}</span>
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-5">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transport Method</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {TRANSPORT_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => setSelectedMode(mode.id)}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border transition-all gap-2",
+                    selectedMode === mode.id 
+                      ? "bg-primary border-primary text-primary-foreground shadow-sm" 
+                      : "bg-white border-zinc-200 text-zinc-500 hover:border-primary/30 hover:bg-zinc-50"
+                  )}
+                >
+                  <mode.icon className="h-5 w-5" />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">{mode.label}</span>
+                </button>
+              ))}
             </div>
+          </div>
 
-            <Button 
-              onClick={handleCalculate} 
-              disabled={calculating}
-              className="w-full h-16 bg-primary text-primary-foreground text-xl font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.01] transition-transform"
-            >
-              {calculating ? <Loader2 className="h-6 w-6 animate-spin" /> : "Calculate My Impact"}
-            </Button>
-          </CardContent>
-        </Card>
+          <Button 
+            onClick={handleCalculate} 
+            disabled={calculating}
+            className="w-full h-14 bg-primary text-primary-foreground text-lg font-headline font-bold rounded-xl shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity"
+          >
+            {calculating ? <Loader2 className="h-5 w-5 animate-spin" /> : "Calculate My Impact"}
+          </Button>
+        </CardContent>
+      </Card>
 
-        {/* RESULTS SECTION */}
-        <div className="lg:col-span-5 space-y-8">
-          {activeResult ? (
-            <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
-              <Card className="glass-card border-none bg-primary text-primary-foreground p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <Sparkles className="h-24 w-24" />
-                </div>
-                <div className="relative z-10 space-y-6">
-                   <div className="flex justify-between items-center">
-                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Audit Results</p>
-                     <Badge className={cn(
-                       "border-none text-white",
-                       activeResult.impact === 'High' ? "bg-red-500" : activeResult.impact === 'Medium' ? "bg-orange-400" : "bg-emerald-400"
-                     )}>
-                       {activeResult.impact} Impact
-                     </Badge>
-                   </div>
-                   <div className="grid grid-cols-2 gap-8">
-                      <div className="space-y-1">
-                        <p className="text-4xl font-headline font-bold">{activeResult.distance} <span className="text-sm opacity-60">km</span></p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Distance</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-4xl font-headline font-bold">{activeResult.co2} <span className="text-sm opacity-60">kg</span></p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">CO2 Emitted</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                      <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
-                        <Sparkles className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-lg font-headline font-bold">+{activeResult.points} Green Points</p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Impact Reward</p>
-                      </div>
-                   </div>
-                </div>
-              </Card>
-
-              <Card className="glass-card border-none p-8 rounded-[2rem] space-y-6">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Info className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="font-headline font-bold text-lg">Personalized Advice</h3>
-                </div>
-                <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 italic text-sm leading-relaxed text-foreground">
-                  {adviceText}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    onClick={handleSave} 
-                    disabled={saving}
-                    className="bg-primary text-primary-foreground h-12 rounded-xl font-bold shadow-lg shadow-primary/20"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-2" /> Save Result</>}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setActiveResult(null)} 
-                    disabled={saving}
-                    className="border-black/5 bg-white/40 h-12 rounded-xl font-bold hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    <X className="h-4 w-4 mr-2" /> Discard
-                  </Button>
-                </div>
-              </Card>
-
-              <Card className="glass-card border-none p-8 rounded-[2rem] bg-secondary/30 relative overflow-hidden">
-                 <div className="flex items-center gap-3 mb-4">
-                   <div className="p-2 bg-primary/20 rounded-lg">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                   </div>
-                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary">AI Insights</h4>
-                 </div>
-                 <p className="text-xs text-muted-foreground leading-relaxed">
-                   If you had taken the <span className="text-primary font-bold">Metro</span> instead of a {activeResult.mode}, your emissions would have been reduced by approximately <span className="text-primary font-bold">82%</span>.
-                 </p>
-              </Card>
-            </div>
-          ) : (
-            <Card className="glass-card border-none h-full flex flex-col items-center justify-center text-center p-12 rounded-[2.5rem] space-y-6">
-              <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
-                <CalculatorIcon className="h-10 w-10 text-primary/40" />
+      {/* Results Section */}
+      {activeResult && (
+        <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Analytics Results Card */}
+            <Card className="bg-white border border-zinc-200 shadow-sm rounded-3xl p-8 space-y-8">
+              <div className="flex justify-between items-center">
+                <h3 className="font-headline font-bold text-lg">Results</h3>
+                <Badge className={cn(
+                  "border-none px-3 py-1 text-[10px] uppercase font-bold",
+                  activeResult.impact === 'High' ? "bg-red-100 text-red-600" : activeResult.impact === 'Medium' ? "bg-orange-100 text-orange-600" : "bg-emerald-100 text-emerald-600"
+                )}>
+                  {activeResult.impact} Impact
+                </Badge>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-headline font-bold text-foreground">No carbon calculations yet</h3>
-                <p className="text-muted-foreground max-w-[250px] mx-auto text-sm">
-                  Enter a route on the left to calculate your first environmental impact audit.
-                </p>
+              
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Distance</p>
+                  <p className="text-3xl font-headline font-bold tabular-nums">{activeResult.distance} <span className="text-sm font-normal text-zinc-400">km</span></p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">CO2 Emitted</p>
+                  <p className="text-3xl font-headline font-bold tabular-nums text-red-500">{activeResult.co2} <span className="text-sm font-normal text-zinc-400">kg</span></p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-zinc-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Impact Reward</p>
+                  <p className="text-lg font-headline font-bold text-primary">+{activeResult.points} Green Points</p>
+                </div>
+                <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </Card>
-          )}
+
+            {/* Advice Card */}
+            <Card className="bg-white border border-zinc-200 shadow-sm rounded-3xl p-8 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-zinc-100 rounded-lg">
+                    <Info className="h-4 w-4 text-zinc-600" />
+                  </div>
+                  <h3 className="font-headline font-bold text-lg">Sustainability Advice</h3>
+                </div>
+                <div className={cn(
+                  "p-6 rounded-2xl text-sm leading-relaxed",
+                  activeResult.mode === 'walking' || activeResult.mode === 'bicycle' 
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                    : "bg-zinc-50 text-zinc-600 border border-zinc-100"
+                )}>
+                  {adviceText}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-8">
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving}
+                  className="bg-primary text-primary-foreground h-12 rounded-xl font-bold shadow-md shadow-primary/10"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-2" /> Save Result</>}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveResult(null)} 
+                  disabled={saving}
+                  className="border-zinc-200 bg-white h-12 rounded-xl font-bold hover:bg-zinc-50 hover:text-red-500"
+                >
+                  <X className="h-4 w-4 mr-2" /> Discard
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* AI Advisor Card */}
+          <Card className="bg-zinc-900 text-white rounded-[2.5rem] p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-10 opacity-10">
+              <Zap className="h-32 w-32" />
+            </div>
+            <div className="relative z-10 space-y-6">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 bg-primary/20 rounded-lg">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                 </div>
+                 <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">EcoPulse AI Insight</h4>
+               </div>
+               <p className="text-xl font-headline font-bold leading-snug max-w-2xl">
+                 If you had taken the <span className="text-primary underline decoration-2 underline-offset-4">Metro</span> instead of a {activeResult.mode}, your journey emissions would have been reduced by approximately <span className="text-primary">82%</span>.
+               </p>
+               <p className="text-zinc-400 text-sm">Switching just two car trips a week to the metro saves over 450kg of CO2 annually.</p>
+            </div>
+          </Card>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!activeResult && (
+        <Card className="bg-white/40 border border-dashed border-zinc-200 h-64 flex flex-col items-center justify-center text-center p-12 rounded-[2.5rem] space-y-4">
+          <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Navigation className="h-8 w-8 text-zinc-300" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-headline font-bold text-zinc-500">No carbon calculations yet</h3>
+            <p className="text-zinc-400 text-sm">
+              Enter a route above to calculate your first environmental impact.
+            </p>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
