@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,34 +6,33 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Calculator, 
-  Lightbulb, 
-  BarChart3, 
+  BookOpen, 
   User, 
   Settings, 
   LogOut, 
-  Leaf,
-  ShieldAlert
+  Leaf
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 const menuItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Calculator', href: '/calculator', icon: Calculator },
-  { name: 'AI Insights', href: '/insights', icon: Lightbulb },
-  { name: 'Progress', href: '/progress', icon: BarChart3 },
-  { name: 'Recommendations', href: '/recommendations', icon: ShieldAlert },
+  { name: 'Knowledge Hub', href: '/knowledge-hub', icon: BookOpen },
   { name: 'Profile', href: '/profile', icon: User },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/login');
   };

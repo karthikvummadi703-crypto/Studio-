@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { FloatingAIAdvisor } from '@/components/ai/floating-advisor';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -12,24 +13,16 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const { user, isLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push('/login');
-      } else {
-        setUser(currentUser);
-        setLoading(false);
-      }
-    });
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
 
-    return () => unsubscribe();
-  }, [router]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -37,11 +30,14 @@ export default function DashboardLayout({
     );
   }
 
+  if (!user) return null;
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <DashboardSidebar />
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
         {children}
+        <FloatingAIAdvisor />
       </main>
     </div>
   );
