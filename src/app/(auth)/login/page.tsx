@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -6,11 +7,10 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const auth = useAuth();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -86,15 +87,6 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-white/5 border-white/10"
               />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="remember" />
-              <label 
-                htmlFor="remember" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Remember me
-              </label>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

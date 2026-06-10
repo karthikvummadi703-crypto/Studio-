@@ -1,12 +1,11 @@
-
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Shield, Moon, Trash2, LogOut } from 'lucide-react';
+import { Bell, Shield, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -40,8 +39,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Weekly Reports</Label>
-                <p className="text-xs text-muted-foreground">Get a summary of your sustainability progress every Monday.</p>
+                <Label>Weekly Summary</Label>
+                <p className="text-xs text-muted-foreground">Receive a performance report every Monday.</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -49,7 +48,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Challenge Alerts</Label>
-                <p className="text-xs text-muted-foreground">Be notified when new challenges are unlocked.</p>
+                <p className="text-xs text-muted-foreground">Be notified when new sustainability challenges are available.</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -62,36 +61,36 @@ export default function SettingsPage() {
               <Shield className="h-5 w-5 text-primary" />
               Privacy
             </CardTitle>
-            <CardDescription>Manage your data visibility and sharing.</CardDescription>
+            <CardDescription>Manage your data visibility.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Public Leaderboard</Label>
-                <p className="text-xs text-muted-foreground">Allow others to see your Green Points and Level.</p>
+                <Label>Public Profile</Label>
+                <p className="text-xs text-muted-foreground">Allow others to see your Green Points and level.</p>
               </div>
               <Switch />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-none border-destructive/20 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="font-headline text-destructive flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Danger Zone
-            </CardTitle>
-            <CardDescription>Irreversible actions for your account.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <Button variant="destructive" className="w-full sm:w-auto">Delete Account</Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end">
-          <Button variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+        <div className="flex flex-col gap-4 pt-4">
+          <Button variant="ghost" className="w-fit text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> Logout from EcoPulse
           </Button>
+          
+          <Card className="glass-card border-none border-destructive/20 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="font-headline text-destructive flex items-center gap-2 text-lg">
+                <Trash2 className="h-5 w-5" />
+                Danger Zone
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <p className="text-sm text-muted-foreground mb-4">Deleting your account is permanent and will remove all your green points and progress.</p>
+               <Button variant="destructive">Delete Account</Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

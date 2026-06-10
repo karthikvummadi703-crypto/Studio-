@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Leaf, Loader2 } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export default function RegisterPage() {
@@ -20,6 +21,8 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const auth = useAuth();
+  const db = useFirestore();
   const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -39,13 +42,14 @@ export default function RegisterPage() {
 
       await updateProfile(user, { displayName: fullName });
 
-      // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         fullName,
         email,
+        greenPoints: 0,
+        sustainabilityScore: 0,
+        level: 'Seedling',
+        completedChallenges: [],
         createdAt: new Date().toISOString(),
-        role: 'user',
-        sustainabilityScore: 75, // Default initial score
       });
 
       toast({
