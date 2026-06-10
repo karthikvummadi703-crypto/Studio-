@@ -2,19 +2,38 @@ import { ai } from '@/ai/genkit';
 import { generateReductionPlanFlow } from '@/ai/flows/generate-reduction-plan';
 import { NextRequest } from 'next/server';
 
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_THRESHOLD = 10;
+const RATE_LIMIT_WINDOW = 60 * 1000;
+
 /**
  * Streaming API Route for AI Environmental Insights.
- * Implements Bearer token authentication check for security.
+ * Protected with Bearer token check and rate limiting.
  */
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Missing or invalid token' }), { 
+      return new Response(JSON.stringify({ error: 'Unauthorized: Missing or invalid token' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const now = Date.now();
+    const timestamps = rateLimitMap.get(ip) || [];
+    const validTimestamps = timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW);
+
+    if (validTimestamps.length >= RATE_LIMIT_THRESHOLD) {
+      return new Response(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+      });
+    }
+
+    validTimestamps.push(now);
+    rateLimitMap.set(ip, validTimestamps);
 
     const input = await req.json();
 
@@ -39,13 +58,13 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Transfer-Encoding': 'chunked',
-        'X-Content-Type-Options': 'nosniff'
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { 
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
