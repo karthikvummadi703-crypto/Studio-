@@ -8,12 +8,12 @@ import {
   signInAnonymously 
 } from 'firebase/auth';
 import { auth, db } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Leaf, Sparkles, Mail, Lock, LogIn } from 'lucide-react';
+import { Loader2, Leaf, Sparkles, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -47,32 +47,52 @@ export default function LoginPage() {
   const handleDemoMode = async () => {
     setDemoLoading(true);
     try {
-      // Use an anonymous sign-in or a shared demo account
-      // For this prototype, we'll use anonymous sign-in and seed data if needed
       const cred = await signInAnonymously(auth);
       const user = cred.user;
 
-      // Seed Demo Data for the anonymous user
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
 
       if (!userDoc.exists()) {
+        // Seed Demo Profile
         await setDoc(userRef, {
-          fullName: 'Demo Eco Explorer',
+          fullName: 'Eco Explorer (Demo)',
           email: 'demo@ecopulse.ai',
-          greenPoints: 450,
-          sustainabilityScore: 78,
+          greenPoints: 320,
+          sustainabilityScore: 68,
           level: 'Eco Warrior',
           createdAt: new Date().toISOString(),
           completedChallenges: ['challenge-1']
         });
+
+        // Seed some Demo Activity
+        await addDoc(collection(db, 'activities'), {
+          userId: user.uid,
+          type: 'milestone',
+          description: 'Joined the EcoPulse network',
+          pointsEarned: 50,
+          timestamp: new Date().toISOString()
+        });
+
+        // Seed a Sample Calculation
+        await addDoc(collection(db, 'calculator_records'), {
+          userId: user.uid,
+          start: 'Central Park',
+          destination: 'Times Square',
+          mode: 'metro',
+          distance: 4.2,
+          co2: 0.08,
+          impact: 'Low',
+          points: 12,
+          timestamp: new Date().toISOString()
+        });
       }
 
-      router.push('/dashboard');
       toast({
         title: "Demo Mode Active",
         description: "Explore EcoPulse with pre-populated telemetry.",
       });
+      router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -86,14 +106,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-xl border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
+      <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardHeader className="p-10 text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-primary/5 ring-8 ring-primary/5">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5">
             <Leaf className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-3xl font-headline font-bold tracking-tight">Welcome Back</CardTitle>
-            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">Access your telemetry node</CardDescription>
+            <CardTitle className="text-3xl font-headline font-bold tracking-tight">EcoPulse AI</CardTitle>
+            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">Environmental Strategy Node</CardDescription>
           </div>
         </CardHeader>
 
@@ -155,7 +175,7 @@ export default function LoginPage() {
 
         <CardFooter className="p-10 pt-0 flex flex-col gap-4 text-center">
           <p className="text-xs text-zinc-500">
-            Don't have an account? <Link href="/register" className="text-primary font-bold hover:underline">Register now</Link>
+            New to the network? <Link href="/register" className="text-primary font-bold hover:underline">Register Node</Link>
           </p>
         </CardFooter>
       </Card>

@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,8 @@ export default function RegisterPage() {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const user = cred.user;
 
+      await updateProfile(user, { displayName: fullName });
+
       // Initialize Profile in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         fullName,
@@ -42,8 +44,17 @@ export default function RegisterPage() {
         completedChallenges: []
       });
 
+      // Log initialization activity
+      await addDoc(collection(db, 'activities'), {
+        userId: user.uid,
+        type: 'initialization',
+        description: 'Profile telemetry initialized',
+        pointsEarned: 0,
+        timestamp: new Date().toISOString()
+      });
+
       toast({
-        title: "Account Created",
+        title: "Node Registered",
         description: "Welcome to EcoPulse AI! Your journey begins now.",
       });
       router.push('/dashboard');
@@ -60,14 +71,14 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-xl border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
+      <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardHeader className="p-10 text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-primary/5 ring-8 ring-primary/5">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5">
             <Leaf className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-3xl font-headline font-bold tracking-tight">Join EcoPulse</CardTitle>
-            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">Initialize your environment node</CardDescription>
+            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">Initialize Environment Node</CardDescription>
           </div>
         </CardHeader>
 
@@ -122,14 +133,14 @@ export default function RegisterPage() {
               className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Register Node"}
             </Button>
           </form>
         </CardContent>
 
         <CardFooter className="p-10 pt-0 flex flex-col gap-4 text-center">
           <p className="text-xs text-zinc-500">
-            Already have an account? <Link href="/login" className="text-primary font-bold hover:underline">Sign in</Link>
+            Already registered? <Link href="/login" className="text-primary font-bold hover:underline">Sign in</Link>
           </p>
         </CardFooter>
       </Card>

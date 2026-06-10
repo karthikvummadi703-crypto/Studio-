@@ -7,7 +7,7 @@ import { useUser } from '@/firebase';
 import { Loader2, Leaf } from 'lucide-react';
 
 /**
- * Root page with intelligent Auth redirection.
+ * Root page with intelligent Auth redirection and state protection.
  */
 export default function RootPage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function RootPage() {
         </div>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-headline font-bold text-foreground">EcoPulse AI</h1>
-          <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest">Waking Telemetry Node...</p>
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em]">Authenticating Node...</p>
         </div>
         <Loader2 className="h-6 w-6 text-primary animate-spin" />
       </div>
