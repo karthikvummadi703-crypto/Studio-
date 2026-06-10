@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,7 +24,7 @@
     --border: 180 15% 90%;
     --input: 180 15% 90%;
     --ring: 165 100% 40%;
-    --radius: 1rem;
+    --radius: 1.5rem;
   }
 
   .dark {
@@ -61,24 +62,24 @@
 }
 
 .glass-card {
-  @apply bg-[#0c1413]/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+  @apply bg-[#0c1413]/60 backdrop-blur-3xl border border-white/5 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)];
 }
 
 .emerald-glow {
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+  text-shadow: 0 0 25px hsl(var(--primary) / 0.5);
 }
 
 .nav-active {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 100%);
-  border-left: 3px solid hsl(var(--primary));
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0) 100%);
+  border-left: 4px solid hsl(var(--primary));
 }
 
 /* Custom scrollbar to match theme */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0,0,0,0.2);
 }
 ::-webkit-scrollbar-thumb {
   background: #1a2e2a;
