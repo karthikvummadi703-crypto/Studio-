@@ -1,4 +1,3 @@
-
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
@@ -42,16 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} antialiased`} suppressHydrationWarning>
       <body className="font-body text-foreground min-h-screen relative overflow-x-hidden selection:bg-primary/30">
-        <div className="relative z-10 min-h-screen">
-          <FirebaseClientProvider>
-            <GlobalNavigation>
-              {children}
-            </GlobalNavigation>
-            <Toaster />
-          </FirebaseClientProvider>
-        </div>
+        <FirebaseClientProvider>
+          <GlobalNavigation>
+            {children}
+          </GlobalNavigation>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );

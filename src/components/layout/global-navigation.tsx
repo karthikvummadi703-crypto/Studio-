@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MoreHorizontal, Bell, Search, X } from 'lucide-react';
@@ -17,41 +16,49 @@ const FloatingAIAdvisor = dynamic(
 );
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, React_setIsSidebarOpen] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, isLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
+
+  // Handle mounting state to prevent hydration mismatches
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isAuthPage = useMemo(() => {
     return pathname === '/login' || pathname === '/register' || pathname === '/';
   }, [pathname]);
 
+  // Auth Guard Redirection Logic
   useEffect(() => {
-    if (!isLoading) {
+    if (mounted && !isLoading) {
       if (!user && !isAuthPage) {
-        router.push('/login');
+        router.replace('/login');
       } else if (user && isAuthPage) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     }
-  }, [isLoading, user, isAuthPage, router]);
+  }, [isLoading, user, isAuthPage, router, mounted]);
 
   const toggleSidebar = useCallback(() => {
-    React_setIsSidebarOpen((prev) => !prev);
+    setIsSidebarOpen((prev) => !prev);
   }, []);
 
   const closeSidebar = useCallback(() => {
-    React_setIsSidebarOpen(false);
+    setIsSidebarOpen(false);
   }, []);
 
   const userInitial = useMemo(() => {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  const showNav = !isAuthPage && user;
+  // Only show navigation UI if user is authenticated and not on an auth page
+  const showNav = mounted && !isAuthPage && user;
 
   return (
-    <div className="flex h-screen overflow-hidden w-full bg-transparent" suppressHydrationWarning>
+    <div className="flex h-screen overflow-hidden w-full bg-transparent">
       {showNav && (
         <nav 
           className={cn(

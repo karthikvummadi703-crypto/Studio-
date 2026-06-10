@@ -32,16 +32,11 @@ export default function LoginPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  /**
-   * Handles traditional email/password login.
-   */
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!email || !password) return;
     
-    logger.log('[Login] Attempting sign-in for:', email);
     setLoading(true);
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
@@ -50,16 +45,13 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: error.message || "Invalid credentials.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Handles Google OAuth login.
-   */
   const handleGoogleLogin = async (): Promise<void> => {
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
@@ -95,9 +87,6 @@ export default function LoginPage() {
     }
   };
 
-  /**
-   * Handles Anonymous Demo Mode access.
-   */
   const handleDemoMode = async (): Promise<void> => {
     setDemoLoading(true);
     try {
@@ -110,7 +99,7 @@ export default function LoginPage() {
       if (!userDoc.exists()) {
         await setDoc(userRef, {
           fullName: 'Eco Explorer (Demo)',
-          email: 'demo@ecopulse.ai',
+          email: '', // Omitted for anonymous security Best Practice
           greenPoints: 320,
           sustainabilityScore: 68,
           level: 'Eco Warrior',
@@ -127,17 +116,14 @@ export default function LoginPage() {
         });
       }
 
-      toast({
-        title: "Demo Mode Active",
-        description: "Explore EcoPulse with pre-populated telemetry.",
-      });
+      toast({ title: "Demo Mode Active", description: "Exploring with anonymous telemetry." });
       router.push('/dashboard');
     } catch (error: any) {
       logger.error('[Login] Demo Error:', error);
       toast({
         variant: "destructive",
         title: "Demo Access Failed",
-        description: "Anonymous Auth may be disabled in Firebase Console. " + error.message,
+        description: "Anonymous Auth may be disabled.",
       });
     } finally {
       setDemoLoading(false);
@@ -168,7 +154,7 @@ export default function LoginPage() {
                   placeholder="name@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl focus-visible:ring-primary/20"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
                   required
                 />
               </div>
@@ -183,7 +169,7 @@ export default function LoginPage() {
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl focus-visible:ring-primary/20"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
                   required
                 />
               </div>
@@ -206,7 +192,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-4">
             <Button 
               variant="outline" 
-              className="h-12 border-zinc-200 hover:bg-zinc-50 font-bold rounded-xl flex items-center justify-center gap-2"
+              className="h-12 border-zinc-200 font-bold rounded-xl flex items-center justify-center gap-2"
               onClick={handleGoogleLogin}
               disabled={googleLoading}
             >

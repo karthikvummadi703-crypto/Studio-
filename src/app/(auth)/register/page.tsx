@@ -14,9 +14,12 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { COLLECTIONS } from '@/lib/constants';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Registration page component for creating new environment nodes.
+ * Includes strict input validation for production security.
  */
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,13 +30,36 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   /**
-   * Handles user registration and profile initialization.
+   * Validates user input before processing registration.
    */
+  const validateInput = (): boolean => {
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[0-9]).{8,}$/;
+
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      toast({ variant: "destructive", title: "Invalid Name", description: "Name must be between 2 and 100 characters." });
+      return false;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      toast({ variant: "destructive", title: "Invalid Email", description: "Please enter a valid email address." });
+      return false;
+    }
+
+    if (!passwordRegex.test(password)) {
+      toast({ variant: "destructive", title: "Weak Password", description: "Password must be at least 8 characters and include a number." });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleRegister = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (!fullName || !email || !password) return;
+    if (!validateInput()) return;
     
-    logger.log('[Register] Starting registration for:', email);
     setLoading(true);
 
     try {
@@ -42,14 +68,24 @@ export default function RegisterPage() {
 
       await updateProfile(user, { displayName: fullName });
 
-      await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
-        fullName,
-        email,
+      const userData = {
+        fullName: fullName.trim(),
+        email: email.trim(),
         greenPoints: 0,
         sustainabilityScore: 0,
         level: 'Seedling',
         createdAt: new Date().toISOString(),
         completedChallenges: []
+      };
+
+      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
+      await setDoc(userRef, userData).catch((err) => {
+        if (err.code === 'permission-denied') {
+          const pErr = new FirestorePermissionError({ path: userRef.path, operation: 'create', requestResourceData: userData });
+          errorEmitter.emit('permission-error', pErr);
+          throw pErr;
+        }
+        throw err;
       });
 
       await addDoc(collection(db, COLLECTIONS.ACTIVITIES), {
@@ -60,18 +96,14 @@ export default function RegisterPage() {
         timestamp: new Date().toISOString()
       });
 
-      toast({
-        title: "Node Registered",
-        description: "Welcome to EcoPulse AI! Redirecting to dashboard...",
-      });
-
+      toast({ title: "Node Registered", description: "Welcome to EcoPulse AI!" });
       router.push('/dashboard');
     } catch (error: any) {
-      logger.error('[Register] Critical Error:', error);
+      logger.error('[Register] Error:', error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "An unexpected error occurred during initialization.",
+        description: error.message || "An unexpected error occurred.",
       });
     } finally {
       setLoading(false);
@@ -101,7 +133,7 @@ export default function RegisterPage() {
                   placeholder="John Doe" 
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl focus-visible:ring-primary/20"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
                   required
                 />
               </div>
@@ -116,7 +148,7 @@ export default function RegisterPage() {
                   placeholder="name@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl focus-visible:ring-primary/20"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
                   required
                 />
               </div>
@@ -128,10 +160,10 @@ export default function RegisterPage() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
                 <Input 
                   type="password" 
-                  placeholder="••••••••" 
+                  placeholder="Min 8 chars, 1 number" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl focus-visible:ring-primary/20"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
                   required
                 />
               </div>
