@@ -6,8 +6,7 @@ import { useUser } from '@/firebase';
 import { Loader2, Leaf } from 'lucide-react';
 
 /**
- * Root page redirector. Handles immediate authentication routing
- * to eliminate extra blank render cycles.
+ * Root page redirector. Ensures Login is the entry point for guests.
  */
 export default function RootPage() {
   const router = useRouter();
@@ -15,6 +14,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (isLoading) return;
+    // Strict Workflow: Login First, Dashboard only if Authenticated
     router.replace(user ? '/dashboard' : '/login');
   }, [user, isLoading, router]);
 
@@ -24,7 +24,7 @@ export default function RootPage() {
         <div className="p-3 bg-primary/10 rounded-2xl">
           <Leaf className="h-10 w-10 text-primary" />
         </div>
-        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Loading...</p>
+        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Initialising Node...</p>
         <Loader2 className="h-5 w-5 text-primary animate-spin" />
       </div>
     </div>

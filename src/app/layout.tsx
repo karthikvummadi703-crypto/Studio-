@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Root Layout optimized with self-hosted fonts and stable structural landmarks.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,11 +53,9 @@ export default function RootLayout({
           Skip to main content
         </a>
         <FirebaseClientProvider>
-          <div className="relative z-10 min-h-screen">
-            <GlobalNavigation>
-              {children}
-            </GlobalNavigation>
-          </div>
+          <GlobalNavigation>
+            {children}
+          </GlobalNavigation>
           <Toaster />
         </FirebaseClientProvider>
       </body>

@@ -18,7 +18,8 @@ import {
   Shield,
   LogOut,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -26,15 +27,19 @@ import { getLevelFromPoints } from '@/lib/levels';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { COLLECTIONS } from '@/lib/constants';
 
+/**
+ * Enhanced User Profile Page with stable data loading.
+ */
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { user, isLoading: authLoading } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
 
-  const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
-  const { data: profile } = useDoc<any>(profileRef);
+  const profileRef = useMemo(() => (user && db ? doc(db, COLLECTIONS.USERS, user.uid) : null), [user, db]);
+  const { data: profile, isLoading: profileLoading } = useDoc<any>(profileRef);
 
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -48,18 +53,34 @@ export default function ProfilePage() {
 
   const joinedDate = useMemo(() => {
     if (!profile?.createdAt) return "---";
-    const date = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    try {
+      const date = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } catch (e) {
+      return "---";
+    }
   }, [profile?.createdAt]);
 
-  if (!profile) return (
+  const loading = authLoading || profileLoading;
+
+  if (loading) return (
     <div className="flex items-center justify-center h-full min-h-[60vh]">
-      <div className="animate-pulse flex flex-col items-center gap-4">
-        <div className="h-12 w-12 bg-primary/20 rounded-full" />
-        <p className="text-primary font-bold uppercase tracking-widest text-[10px]">Synchronizing Profile...</p>
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-primary font-bold uppercase tracking-widest text-[10px]">Syncing Environmental Node...</p>
       </div>
     </div>
   );
+
+  if (!profile && !loading) {
+     return (
+       <div className="max-w-xl mx-auto py-20 text-center space-y-6">
+         <h2 className="text-2xl font-headline font-bold">Profile Not Found</h2>
+         <p className="text-zinc-500">Your environmental telemetry record could not be located. Please try re-authenticating.</p>
+         <Button onClick={handleLogout} variant="outline" className="rounded-xl px-10">Logout</Button>
+       </div>
+     )
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-fade-in">
@@ -79,7 +100,7 @@ export default function ProfilePage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-bold text-[11px] uppercase tracking-widest",
+                "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-bold text-[11px] uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 activeTab === tab.id 
                   ? "bg-primary text-white shadow-lg shadow-primary/20" 
                   : "text-zinc-500 hover:bg-primary/5 hover:text-primary"

@@ -17,7 +17,7 @@ const FloatingAIAdvisor = dynamic(
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const pathname = usePathname();
 
   const isAuthPage = useMemo(() => {
@@ -36,7 +36,8 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  const showNav = !isAuthPage && user;
+  // Authentication Guard for Shell Rendering
+  const showNav = !isAuthPage && !!user && !isLoading;
 
   return (
     <div className="flex h-screen overflow-hidden w-full bg-transparent" suppressHydrationWarning>

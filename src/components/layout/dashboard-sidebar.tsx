@@ -21,6 +21,9 @@ const menuItems = [
   { name: 'PROFILE', href: '/profile', icon: User },
 ];
 
+/**
+ * Solid Dashboard Sidebar for maximum GPU efficiency.
+ */
 export function DashboardSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
