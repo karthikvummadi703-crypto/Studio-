@@ -9,7 +9,8 @@ import {
   BookOpen, 
   User, 
   Leaf,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +18,7 @@ const menuItems = [
   { name: 'DASHBOARD', href: '/dashboard', icon: LayoutDashboard },
   { name: 'CALCULATOR', href: '/calculator', icon: Calculator },
   { name: 'KNOWLEDGE HUB', href: '/knowledge-hub', icon: BookOpen },
+  { name: 'AI ADVISOR', href: '/ai-advisor', icon: Sparkles },
   { name: 'PROFILE', href: '/profile', icon: User },
 ];
 

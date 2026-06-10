@@ -1,12 +1,14 @@
+
 "use client";
 
 import { useState } from 'react';
-import { Sparkles, X, Send, Loader2, Minimize2, Maximize2 } from 'lucide-react';
+import { Sparkles, X, Send, Loader2, Minimize2, Maximize2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export function FloatingAIAdvisor() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,10 +27,11 @@ export function FloatingAIAdvisor() {
     setInput('');
     setIsLoading(true);
 
+    // Mock response for quick assistant
     setTimeout(() => {
       setMessages(prev => [...prev, { 
         role: 'ai', 
-        text: "Based on environmental telemetry, I recommend completing an Impact Audit first. This will allow me to generate precise carbon reduction strategies for your profile." 
+        text: "I've analyzed your telemetry. For a deeper, more detailed analysis of your carbon trends, feel free to open the full AI Advisor workspace." 
       }]);
       setIsLoading(false);
     }, 1500);
@@ -81,9 +84,14 @@ export function FloatingAIAdvisor() {
               <div className="p-2 bg-primary rounded-xl shadow-md">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <CardTitle className="text-sm font-headline font-bold uppercase tracking-widest text-primary">AI Advisor</CardTitle>
+              <CardTitle className="text-sm font-headline font-bold uppercase tracking-widest text-primary">AI Assistant</CardTitle>
             </div>
             <div className="flex items-center gap-1">
+              <Link href="/ai-advisor" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary/80" title="Open Full Advisor">
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </Link>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsExpanded(!isExpanded)}>
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
