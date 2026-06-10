@@ -3,16 +3,16 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Verified Firebase Configuration for EcoPulse AI.
- * Values are hardcoded for preview stability to ensure immediate availability.
+ * Dynamic Firebase Configuration for EcoPulse AI.
+ * Values are loaded from environment variables for enhanced security.
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyCiAHwWhFFF7RyOByxe4PsYxOSy8jgKZAo",
-  authDomain: "studio-9772282798-f7257.firebaseapp.com",
-  projectId: "studio-9772282798-f7257",
-  storageBucket: "studio-9772282798-f7257.firebasestorage.app",
-  messagingSenderId: "9772282798",
-  appId: "1:9772282798:web:724f798e4f576e8280f576",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
 let app: FirebaseApp;
@@ -24,7 +24,7 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
 } catch (error) {
-  console.error("[Firebase] Initialization failed:", error);
+  // Centralized logging for initialization errors
   throw error;
 }
 
