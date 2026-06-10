@@ -8,12 +8,12 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getLevelFromPoints } from '@/lib/levels';
-import { ChatMessage as IChatMessage, UserProfile } from '@/types';
+import type { UserProfile, ChatMessage } from '@/types';
 
 /**
  * Individual chat message bubble component for the floating interface.
  */
-const Bubble = memo(({ message, isUser }: { message: IChatMessage, isUser: boolean }) => (
+const Bubble = memo(({ message, isUser }: { message: ChatMessage, isUser: boolean }) => (
   <div className={cn(
     "flex flex-col max-w-[90%] animate-fade-in",
     isUser ? "ml-auto items-end" : "items-start"
@@ -44,9 +44,9 @@ export function FloatingAIAdvisor() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
-  const { data: profile } = useDoc<UserProfile>(profileRef as any);
+  const { data: profile } = useDoc<UserProfile>(profileRef);
 
-  const [messages, setMessages] = useState<IChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'ai', text: 'Hello! I am your Gemini-powered advisor. How can I help you reduce your footprint today?', timestamp: new Date().toISOString() }
   ]);
 

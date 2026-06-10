@@ -10,9 +10,9 @@ import {
   Firestore,
   onSnapshot 
 } from 'firebase/firestore';
-import { UserProfile, AIConversation } from '@/types';
+import type { UserProfile, AIConversation } from '@/types';
 
-interface AdvisorDataState {
+interface AdvisorData {
   profile: UserProfile | null;
   chats: AIConversation[];
   isLoading: boolean;
@@ -23,8 +23,8 @@ interface AdvisorDataState {
  * @param userId The current authenticated user ID.
  * @param db The Firestore database instance.
  */
-export function useAdvisorData(userId: string | undefined, db: Firestore | undefined): AdvisorDataState {
-  const [data, setData] = useState<AdvisorDataState>({
+export function useAdvisorData(userId: string | undefined, db: Firestore | undefined): AdvisorData {
+  const [data, setData] = useState<AdvisorData>({
     profile: null,
     chats: [],
     isLoading: true
@@ -48,7 +48,7 @@ export function useAdvisorData(userId: string | undefined, db: Firestore | undef
 
     const profileUnsub = onSnapshot(profileRef, (snap) => {
       profileReady = true;
-      setData((prev) => ({
+      setData((prev: AdvisorData) => ({
         ...prev,
         profile: snap.exists() ? { ...snap.data(), id: snap.id } as UserProfile : null,
         isLoading: !(profileReady && chatsReady)
@@ -58,7 +58,7 @@ export function useAdvisorData(userId: string | undefined, db: Firestore | undef
     const chatsUnsub = onSnapshot(historyQuery, (snap) => {
       chatsReady = true;
       const chats = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as AIConversation));
-      setData((prev) => ({
+      setData((prev: AdvisorData) => ({
         ...prev,
         chats,
         isLoading: !(profileReady && chatsReady)
