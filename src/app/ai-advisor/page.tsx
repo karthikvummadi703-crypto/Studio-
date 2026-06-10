@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { 
   Sparkles, 
   Send, 
@@ -12,7 +13,6 @@ import {
   MessageSquare,
   Zap,
   Leaf,
-  Activity,
   User as UserIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,11 +33,9 @@ export default function AIAdvisorPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 1. Fetch User Data for Context
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc<any>(profileRef);
 
-  // 2. Fetch Chat History
   const historyQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(
@@ -48,7 +46,6 @@ export default function AIAdvisorPage() {
   }, [db, user]);
   const { data: chats } = useCollection<any>(historyQuery);
 
-  // 3. Active Conversation Data
   const activeChatRef = useMemo(() => (activeChatId && db ? doc(db, 'ai_conversations', activeChatId) : null), [activeChatId, db]);
   const { data: activeChat } = useDoc<any>(activeChatRef);
 
@@ -78,24 +75,24 @@ export default function AIAdvisorPage() {
     try {
       let chatId = activeChatId;
 
-      // 1. Instant UI Update: Save user message to Firestore first
+      // 1. Initial save/update (Optimistic UI handled by Firestore sync)
       if (!chatId) {
         const docRef = await addDoc(collection(db, 'ai_conversations'), {
           userId: user.uid,
-          title: text.substring(0, 30) + '...',
+          title: text.substring(0, 30),
           messages: [userMessage],
           updatedAt: serverTimestamp(),
         });
         chatId = docRef.id;
         setActiveChatId(chatId);
       } else {
-        await updateDoc(doc(db, 'ai_conversations', chatId), {
+        updateDoc(doc(db, 'ai_conversations', chatId), {
           messages: currentMessages,
           updatedAt: serverTimestamp(),
         });
       }
 
-      // 2. Call AI Flow
+      // 2. AI Execution
       const result = await aiAdvisorChat({
         history: currentMessages.map(m => ({ role: m.role as 'user' | 'ai', text: m.text })),
         userInput: text,
@@ -108,29 +105,27 @@ export default function AIAdvisorPage() {
       });
 
       const aiMessage = { role: 'ai', text: result.responseText, timestamp: new Date().toISOString() };
-      const finalMessages = [...currentMessages, aiMessage];
-
-      // 3. Update with AI response
-      await updateDoc(doc(db, 'ai_conversations', chatId), {
-        messages: finalMessages,
-        title: activeChat?.title === text.substring(0, 30) + '...' && result.suggestedTitle ? result.suggestedTitle : (activeChat?.title || result.suggestedTitle || text.substring(0, 30)),
+      
+      // 3. Final update
+      updateDoc(doc(db, 'ai_conversations', chatId), {
+        messages: [...currentMessages, aiMessage],
+        title: result.suggestedTitle || activeChat?.title || text.substring(0, 30),
         updatedAt: serverTimestamp(),
       });
       
     } catch (e) {
-      console.error('AI Advisor Error:', e);
+      console.error('Advisor speed error:', e);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-700">
-      {/* Sidebar: Chat History */}
-      <Card className="w-full md:w-80 glass-card border-none flex flex-col h-full overflow-hidden shrink-0">
-        <div className="p-6 border-b border-black/5 bg-primary/5 flex items-center justify-between">
-          <h2 className="text-sm font-headline font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-            <History className="h-4 w-4" /> History
+    <div className="h-[calc(100vh-140px)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-300">
+      <Card className="w-full md:w-80 border border-zinc-200 shadow-sm flex flex-col h-full overflow-hidden shrink-0 bg-white/50 backdrop-blur-sm rounded-[2rem]">
+        <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
+            <History className="h-3 w-3" /> History
           </h2>
           <Button size="icon" variant="ghost" className="h-8 w-8 text-primary rounded-xl" onClick={handleNewChat}>
             <Plus className="h-5 w-5" />
@@ -140,7 +135,7 @@ export default function AIAdvisorPage() {
           <div className="space-y-2">
             {!chats || chats.length === 0 ? (
               <div className="text-center py-10 opacity-40">
-                <p className="text-[10px] font-bold uppercase tracking-widest">No history yet</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest">Workspace Empty</p>
               </div>
             ) : (
               chats.map((chat) => (
@@ -168,23 +163,20 @@ export default function AIAdvisorPage() {
         </ScrollArea>
       </Card>
 
-      {/* Main Chat Workspace */}
-      <Card className="flex-1 glass-card border-none flex flex-col h-full overflow-hidden">
-        <CardHeader className="p-6 border-b border-black/5 bg-white/50 backdrop-blur-md flex flex-row items-center justify-between shrink-0">
+      <Card className="flex-1 border border-zinc-200 shadow-sm flex flex-col h-full overflow-hidden bg-white/80 backdrop-blur-sm rounded-[2rem]">
+        <CardHeader className="p-6 border-b border-zinc-100 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <div className="p-2.5 bg-primary rounded-2xl shadow-lg shadow-primary/20">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg font-headline font-bold">EcoPulse AI Advisor</CardTitle>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">High Performance Engine Active</p>
+              <CardTitle className="text-lg font-headline font-bold">EcoPulse Advisor</CardTitle>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">High Speed Engine</p>
             </div>
           </div>
-          {activeChatId && (
-            <Badge variant="outline" className="border-primary/20 text-primary text-[9px] font-bold uppercase tracking-widest px-3 py-1">
-              Real-time Sync
-            </Badge>
-          )}
+          <Badge variant="outline" className="border-primary/20 text-primary text-[9px] font-bold uppercase tracking-widest px-3 py-1">
+            Gemini Flash 1.5
+          </Badge>
         </CardHeader>
 
         <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
@@ -195,9 +187,9 @@ export default function AIAdvisorPage() {
                   <Leaf className="h-10 w-10 text-primary animate-pulse" />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-2xl font-headline font-bold">Sustainability Workspace</h3>
-                  <p className="text-muted-foreground max-w-sm text-sm">
-                    Instant analysis of your environmental impact powered by Gemini Flash.
+                  <h3 className="text-2xl font-headline font-bold text-zinc-800">Environmental Workspace</h3>
+                  <p className="text-zinc-500 max-w-sm text-sm">
+                    Instant strategic insights for your footprint.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-xl">
@@ -205,7 +197,7 @@ export default function AIAdvisorPage() {
                     'Analyze My Carbon Footprint',
                     'How can I earn more points?',
                     'Suggest a reduction plan',
-                    'Explain my environmental level'
+                    'Recommend Next Challenge'
                   ].map(prompt => (
                     <Button 
                       key={prompt} 
@@ -223,7 +215,7 @@ export default function AIAdvisorPage() {
               <div className="space-y-8 max-w-4xl mx-auto">
                 {messages.map((m, i) => (
                   <div key={i} className={cn(
-                    "flex gap-4 group animate-in fade-in slide-in-from-bottom-4",
+                    "flex gap-4 group animate-in fade-in slide-in-from-bottom-2",
                     m.role === 'user' ? "flex-row-reverse" : "flex-row"
                   )}>
                     <div className={cn(
@@ -249,7 +241,7 @@ export default function AIAdvisorPage() {
                     </div>
                     <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating Insights...
+                      Generating...
                     </div>
                   </div>
                 )}
@@ -258,10 +250,10 @@ export default function AIAdvisorPage() {
             )}
           </ScrollArea>
 
-          <div className="p-6 md:p-8 border-t border-black/5 bg-white/60 backdrop-blur-md">
+          <div className="p-6 md:p-8 border-t border-zinc-100 bg-white/50">
             <div className="max-w-4xl mx-auto relative group">
               <Input 
-                placeholder="Ask about your footprint, challenges, or reduction strategies..." 
+                placeholder="Ask about your footprint..." 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -277,9 +269,6 @@ export default function AIAdvisorPage() {
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </Button>
             </div>
-            <p className="text-center text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-4 opacity-40">
-              Powered by Gemini 1.5 Flash • Instant Environmental Advisory
-            </p>
           </div>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A fast, optimized Genkit flow for the EcoPulse AI Advisor.
+ * @fileOverview A hyper-optimized Genkit flow for the EcoPulse AI Advisor.
  *
  * - aiAdvisorChat - High-speed conversational AI consultant.
  */
@@ -26,8 +26,8 @@ const AIAdvisorChatInputSchema = z.object({
 });
 
 const AIAdvisorChatOutputSchema = z.object({
-  responseText: z.string().describe('Concise, fast response.'),
-  suggestedTitle: z.string().optional().describe('Short title.'),
+  responseText: z.string().describe('Short, actionable response.'),
+  suggestedTitle: z.string().optional().describe('3-5 word title.'),
 });
 
 export async function aiAdvisorChat(input: z.infer<typeof AIAdvisorChatInputSchema>): Promise<z.infer<typeof AIAdvisorChatOutputSchema>> {
@@ -39,24 +39,21 @@ const prompt = ai.definePrompt({
   input: { schema: AIAdvisorChatInputSchema },
   output: { schema: AIAdvisorChatOutputSchema },
   config: {
-    temperature: 0.7,
+    temperature: 0.4, // Lower temperature for faster, more predictable output
+    maxOutputTokens: 300, // Limit response length for speed
   },
-  prompt: `You are EcoPulse AI, a high-performance sustainability consultant. 
-Keep responses concise, professional, and extremely actionable.
+  prompt: `You are EcoPulse AI. Respond instantly and concisely.
 
-User Status:
-- Score: {{{userContext.score}}}
-- Level: {{{userContext.level}}}
-- Points: {{{userContext.points}}}
+Context: Score:{{userContext.score}}, Points:{{userContext.points}}, Level:{{userContext.level}}.
 
 History:
 {{#each history}}
-- {{role}}: {{text}}
+{{role}}: {{text}}
 {{/each}}
 
-User Question: {{{userInput}}}
+User: {{{userInput}}}
 
-Respond now. If new chat, provide a short title.`,
+Instruction: Give a 2-sentence actionable tip. If first message, provide a short title.`,
 });
 
 const aiAdvisorChatFlow = ai.defineFlow(
