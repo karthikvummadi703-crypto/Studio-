@@ -17,30 +17,23 @@ const FloatingAIAdvisor = dynamic(
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const { user, isLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
-
-  // Handle mounting state to prevent hydration mismatches
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const isAuthPage = useMemo(() => {
     return pathname === '/login' || pathname === '/register' || pathname === '/';
   }, [pathname]);
 
-  // Auth Guard Redirection Logic
   useEffect(() => {
-    if (mounted && !isLoading) {
+    if (!isLoading) {
       if (!user && !isAuthPage) {
         router.replace('/login');
       } else if (user && isAuthPage) {
         router.replace('/dashboard');
       }
     }
-  }, [isLoading, user, isAuthPage, router, mounted]);
+  }, [isLoading, user, isAuthPage, router]);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
@@ -54,13 +47,13 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // Only show navigation UI if user is authenticated and not on an auth page
-  const showNav = mounted && !isAuthPage && user;
+  const showNav = !isAuthPage && user;
 
   return (
-    <div className="flex h-screen overflow-hidden w-full bg-transparent">
+    <div className="flex h-screen overflow-hidden w-full bg-transparent" suppressHydrationWarning>
       {showNav && (
         <nav 
+          aria-label="Sidebar Navigation"
           className={cn(
             "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
             isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -76,7 +69,9 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleSidebar}
-                className="p-2 hover:bg-primary/10 rounded-full text-primary transition-all flex items-center justify-center"
+                aria-expanded={isSidebarOpen}
+                aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+                className="p-2 hover:bg-primary/10 rounded-full text-primary transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary outline-none"
               >
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <MoreHorizontal className="h-8 w-8" />}
               </button>
@@ -89,13 +84,17 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
             
             <div className="flex items-center gap-4">
               <div className="hidden md:flex relative w-48 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-primary transition-colors" />
                 <Input 
                   placeholder="Search..." 
-                  className="pl-9 h-8 bg-white/40 border-primary/10 rounded-full text-[10px]"
+                  aria-label="Search EcoPulse"
+                  className="pl-9 h-8 bg-white/40 border-primary/10 rounded-full text-[10px] focus-visible:ring-primary"
                 />
               </div>
-              <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
+              <button 
+                className="p-2 text-zinc-500 hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary rounded-full outline-none"
+                aria-label="View notifications"
+              >
                 <Bell className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-3 pl-4 border-l border-primary/10">
@@ -109,7 +108,11 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
           </header>
         )}
         
-        <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-transparent">
+        <main 
+          id="main-content"
+          className="flex-1 overflow-y-auto custom-scrollbar relative bg-transparent outline-none"
+          tabIndex={-1}
+        >
           <div className={cn(
             "max-w-7xl mx-auto p-4 sm:p-8 pb-24 relative z-10",
             showNav && "bg-white/10 min-h-full"
@@ -124,6 +127,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         <div 
           className="fixed inset-0 bg-black/10 z-40 md:hidden" 
           onClick={closeSidebar}
+          aria-hidden="true"
         />
       )}
     </div>

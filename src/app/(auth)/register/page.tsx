@@ -27,25 +27,31 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateInput = useCallback((): boolean => {
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[0-9]).{8,}$/;
+    const newErrors: Record<string, string> = {};
 
     if (trimmedName.length < 2 || trimmedName.length > 100) {
-      toast({ variant: "destructive", title: "Invalid Name", description: "Name must be between 2 and 100 characters." });
-      return false;
+      newErrors.fullName = "Name must be between 2 and 100 characters.";
     }
 
     if (!emailRegex.test(trimmedEmail)) {
-      toast({ variant: "destructive", title: "Invalid Email", description: "Please enter a valid email address." });
-      return false;
+      newErrors.email = "Please enter a valid email address.";
     }
 
     if (!passwordRegex.test(password)) {
-      toast({ variant: "destructive", title: "Weak Password", description: "Password must be at least 8 characters and include a number." });
+      newErrors.password = "Password must be at least 8 characters and include a number.";
+    }
+
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Please check the form for errors." });
       return false;
     }
 
@@ -110,64 +116,79 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardHeader className="p-10 text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5" aria-hidden="true">
             <Leaf className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-3xl font-headline font-bold tracking-tight">Join EcoPulse</CardTitle>
-            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">Initialize Environment Node</CardDescription>
+            <CardDescription className="text-sm uppercase font-black tracking-widest text-zinc-600">Initialize Environment Node</CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="p-10 pt-0 space-y-6">
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Full Name</Label>
+              <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
+                  id="fullName"
+                  autoComplete="name"
                   placeholder="John Doe" 
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
+                  aria-invalid={!!errors.fullName}
+                  aria-describedby={errors.fullName ? "fullName-error" : undefined}
+                  className={cn("h-12 pl-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary", errors.fullName && "border-red-500")}
                   required
                 />
               </div>
+              {errors.fullName && <p id="fullName-error" className="text-[10px] text-red-600 font-bold uppercase">{errors.fullName}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Email Address</Label>
+              <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Email Address</Label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
+                  id="email"
                   type="email" 
+                  autoComplete="email"
                   placeholder="name@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
+                  className={cn("h-12 pl-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary", errors.email && "border-red-500")}
                   required
                 />
               </div>
+              {errors.email && <p id="email-error" className="text-[10px] text-red-600 font-bold uppercase">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Password</Label>
+              <Label htmlFor="password" title="Security Key" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
+                  id="password"
                   type="password" 
+                  autoComplete="new-password"
                   placeholder="Min 8 chars, 1 number" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "password-error" : undefined}
+                  className={cn("h-12 pl-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary", errors.password && "border-red-500")}
                   required
                 />
               </div>
+              {errors.password && <p id="password-error" className="text-[10px] text-red-600 font-bold uppercase">{errors.password}</p>}
             </div>
 
             <Button 
               type="submit" 
-              className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
+              className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform focus-visible:ring-2 focus-visible:ring-primary"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Register Node"}
@@ -176,8 +197,8 @@ export default function RegisterPage() {
         </CardContent>
 
         <CardFooter className="p-10 pt-0 flex flex-col gap-4 text-center">
-          <p className="text-xs text-zinc-500">
-            Already registered? <Link href="/login" className="text-primary font-bold hover:underline">Sign in</Link>
+          <p className="text-xs text-zinc-600 font-medium">
+            Already registered? <Link href="/login" className="text-primary font-bold hover:underline focus-visible:ring-1 focus-visible:ring-primary rounded">Sign in</Link>
           </p>
         </CardFooter>
       </Card>

@@ -22,7 +22,7 @@ const Bubble = memo(({ message, isUser }: { message: any, isUser: boolean }) => 
       "p-4 rounded-[1.5rem] text-xs leading-relaxed shadow-sm",
       isUser 
         ? "bg-primary text-white rounded-tr-none font-medium" 
-        : "bg-zinc-50 border border-zinc-100 rounded-tl-none text-zinc-700"
+        : "bg-zinc-50 border border-zinc-200 rounded-tl-none text-zinc-800"
     )}>
       {message.text}
     </div>
@@ -108,22 +108,27 @@ export function FloatingAIAdvisor() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-64 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-black/5 flex items-center justify-between px-10 z-40 transition-all duration-300">
-        <div className="flex items-center gap-4 group cursor-pointer" onClick={toggleOpen}>
+      <div className="fixed bottom-0 left-64 right-0 h-16 bg-white/95 border-t border-black/5 flex items-center justify-between px-10 z-40 transition-all duration-300">
+        <button 
+          className="flex items-center gap-4 group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary rounded-xl p-1 outline-none" 
+          onClick={toggleOpen}
+          aria-label={isOpen ? "Close AI Advisor" : "Open AI Advisor"}
+          aria-expanded={isOpen}
+        >
            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
               <Sparkles className="h-5 w-5 text-primary" />
            </div>
-           <div>
-              <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Quick Assistant</p>
-              <p className="text-[11px] font-bold text-muted-foreground">Gemini Flash Active</p>
+           <div className="text-left">
+              <p className="text-[10px] font-black text-primary tracking-[0.2em] uppercase">Quick Assistant</p>
+              <p className="text-[11px] font-bold text-zinc-600">Gemini Flash Active</p>
            </div>
-        </div>
+        </button>
 
         <div className="flex gap-4">
            {['Analyze Impact', 'Open Full AI Advisor'].map(prompt => (
              prompt === 'Open Full AI Advisor' ? (
                 <Link key={prompt} href="/ai-advisor" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" size="sm" className="h-9 px-4 border-primary text-primary text-[9px] font-bold uppercase tracking-widest hover:bg-primary/5 transition-all rounded-full">
+                  <Button variant="outline" size="sm" className="h-9 px-4 border-primary text-primary text-[9px] font-bold uppercase tracking-widest hover:bg-primary/5 transition-all rounded-full focus-visible:ring-2 focus-visible:ring-primary">
                     {prompt}
                   </Button>
                 </Link>
@@ -132,11 +137,12 @@ export function FloatingAIAdvisor() {
                   key={prompt}
                   variant="outline" 
                   size="sm" 
-                  className="hidden lg:flex h-9 px-4 border-zinc-200 bg-white text-zinc-500 text-[9px] font-bold uppercase tracking-widest hover:border-primary hover:text-primary transition-all rounded-full"
+                  className="hidden lg:flex h-9 px-4 border-zinc-200 bg-white text-zinc-600 text-[9px] font-bold uppercase tracking-widest hover:border-primary hover:text-primary transition-all rounded-full focus-visible:ring-2 focus-visible:ring-primary"
                   onClick={() => {
                     setIsOpen(true);
                     handleSend(prompt);
                   }}
+                  aria-label={`Ask AI: ${prompt}`}
                 >
                   {prompt}
                 </Button>
@@ -163,33 +169,45 @@ export function FloatingAIAdvisor() {
             </div>
             <div className="flex items-center gap-1">
               <Link href="/ai-advisor" onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary/80" title="Open Full Advisor">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-primary" aria-label="Open Full Advisor">
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={toggleExpanded}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-zinc-500 focus-visible:ring-2 focus-visible:ring-primary" 
+                onClick={toggleExpanded}
+                aria-label={isExpanded ? "Minimize panel" : "Maximize panel"}
+              >
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsOpen(false)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-zinc-500 focus-visible:ring-2 focus-visible:ring-primary" 
+                onClick={() => setIsOpen(false)}
+                aria-label="Close panel"
+              >
                 <X className="h-5 w-5" />
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden bg-white">
             <ScrollArea className="flex-1 p-6">
-              <div className="space-y-6">
+              <div className="space-y-6" role="log" aria-live="polite" aria-label="AI conversation">
                 {messages.map((m, i) => (
                   <Bubble key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 {streamingText && (
                   <div className="flex flex-col max-w-[90%] items-start animate-in fade-in">
-                    <div className="p-4 rounded-[1.5rem] rounded-tl-none text-xs leading-relaxed shadow-sm bg-zinc-50 border border-zinc-100 text-zinc-700">
+                    <div className="p-4 rounded-[1.5rem] rounded-tl-none text-xs leading-relaxed shadow-sm bg-zinc-50 border border-zinc-200 text-zinc-800">
                       {streamingText}
                     </div>
                   </div>
                 )}
                 {isLoading && !streamingText && (
-                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-bold tracking-widest animate-pulse px-2">
+                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Streaming...
                   </div>
@@ -200,12 +218,19 @@ export function FloatingAIAdvisor() {
             <div className="p-5 border-t border-zinc-100 bg-white flex gap-3">
               <Input 
                 placeholder="Ask Gemini..." 
-                className="bg-zinc-50 border-transparent text-xs h-12 rounded-xl focus-visible:ring-primary/20"
+                aria-label="Type your sustainability question"
+                className="bg-zinc-50 border-zinc-200 text-xs h-12 rounded-xl focus-visible:ring-primary"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
-              <Button size="icon" className="h-12 w-12 bg-primary shadow-lg shadow-primary/30 hover:scale-105 transition-transform" onClick={() => handleSend()} disabled={isLoading}>
+              <Button 
+                size="icon" 
+                className="h-12 w-12 bg-primary shadow-lg shadow-primary/30 hover:scale-105 transition-transform focus-visible:ring-2 focus-visible:ring-primary outline-none" 
+                onClick={() => handleSend()} 
+                disabled={isLoading}
+                aria-label="Send message"
+              >
                 <Send className="h-5 w-5 text-white" />
               </Button>
             </div>

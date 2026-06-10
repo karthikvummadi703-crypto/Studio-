@@ -34,12 +34,12 @@ const ChatMessage = memo(({ message, isUser }: { message: any, isUser: boolean }
       "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm",
       isUser ? "bg-zinc-100" : "bg-primary"
     )}>
-      {isUser ? <UserIcon className="h-5 w-5 text-zinc-400" /> : <Sparkles className="h-5 w-5 text-white" />}
+      {isUser ? <UserIcon className="h-5 w-5 text-zinc-500" /> : <Sparkles className="h-5 w-5 text-white" />}
     </div>
     <div className={cn(
       "p-6 rounded-[2rem] text-sm leading-relaxed max-w-[80%] shadow-sm border",
       isUser 
-        ? "bg-white border-zinc-100 rounded-tr-none text-foreground" 
+        ? "bg-white border-zinc-200 rounded-tr-none text-foreground" 
         : "bg-primary/5 border-primary/10 rounded-tl-none text-foreground font-medium"
     )}>
       {message.text}
@@ -156,8 +156,9 @@ export default function AIAdvisorPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center" aria-busy="true">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="sr-only">Loading strategic advisor...</span>
       </div>
     );
   }
@@ -166,42 +167,49 @@ export default function AIAdvisorPage() {
     <div className="h-[calc(100vh-140px)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-300">
       <Card className="w-full md:w-80 border border-zinc-200 shadow-sm flex flex-col h-full overflow-hidden shrink-0 bg-white/50 backdrop-blur-sm rounded-[2rem]">
         <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 flex items-center gap-2">
             <History className="h-3 w-3" /> History
           </h2>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-primary rounded-xl" onClick={handleNewChat}>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 text-primary rounded-xl focus-visible:ring-2 focus-visible:ring-primary" 
+            onClick={handleNewChat}
+            aria-label="Start new chat"
+          >
             <Plus className="h-5 w-5" />
           </Button>
         </div>
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-2">
+          <nav className="space-y-2" aria-label="Conversation history">
             {chats.length === 0 ? (
-              <div className="text-center py-10 opacity-40">
-                <p className="text-[9px] font-bold uppercase tracking-widest">No Chats Found</p>
+              <div className="text-center py-10 opacity-60">
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">No Chats Found</p>
               </div>
             ) : (
               chats.map((chat: any) => (
                 <button
                   key={chat.id}
                   onClick={() => setActiveChatId(chat.id)}
+                  aria-pressed={activeChatId === chat.id}
                   className={cn(
-                    "w-full text-left p-4 rounded-2xl transition-all group flex items-start gap-3",
+                    "w-full text-left p-4 rounded-2xl transition-all group flex items-start gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     activeChatId === chat.id 
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                      : "hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                      : "hover:bg-primary/5 text-zinc-600 hover:text-primary"
                   )}
                 >
-                  <MessageSquare className={cn("h-4 w-4 mt-0.5 shrink-0", activeChatId === chat.id ? "text-primary-foreground" : "text-zinc-300 group-hover:text-primary")} />
+                  <MessageSquare className={cn("h-4 w-4 mt-0.5 shrink-0", activeChatId === chat.id ? "text-primary-foreground" : "text-zinc-400 group-hover:text-primary")} />
                   <div className="overflow-hidden">
                     <p className="text-[11px] font-bold truncate">{chat.title || 'Conversation'}</p>
-                    <p className={cn("text-[9px] uppercase tracking-tighter mt-0.5", activeChatId === chat.id ? "text-primary-foreground/60" : "text-zinc-400")}>
+                    <p className={cn("text-[9px] uppercase tracking-tighter mt-0.5 font-black", activeChatId === chat.id ? "text-primary-foreground/80" : "text-zinc-500")}>
                       {chat.updatedAt?.toDate ? chat.updatedAt.toDate().toLocaleDateString() : 'Just now'}
                     </p>
                   </div>
                 </button>
               ))
             )}
-          </div>
+          </nav>
         </ScrollArea>
       </Card>
 
@@ -213,10 +221,10 @@ export default function AIAdvisorPage() {
             </div>
             <div>
               <CardTitle className="text-lg font-headline font-bold">EcoPulse Advisor</CardTitle>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Active Analytics</p>
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Active Analytics</p>
             </div>
           </div>
-          <Badge variant="outline" className="border-primary/20 text-primary text-[9px] font-bold uppercase tracking-widest px-3 py-1">
+          <Badge variant="outline" className="border-primary/20 text-primary text-[9px] font-black uppercase tracking-widest px-3 py-1">
             Gemini Flash
           </Badge>
         </CardHeader>
@@ -225,12 +233,12 @@ export default function AIAdvisorPage() {
           <ScrollArea className="flex-1 p-6 md:p-10">
             {messages.length === 0 && !loading && !streamingText ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-8 py-20">
-                <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-primary/5">
+                <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-primary/5" aria-hidden="true">
                   <Leaf className="h-10 w-10 text-primary animate-pulse" />
                 </div>
                 <div className="space-y-3">
                   <h3 className="text-2xl font-headline font-bold text-zinc-800">Strategy Engine</h3>
-                  <p className="text-zinc-500 max-w-sm text-sm">
+                  <p className="text-zinc-600 max-w-sm text-sm font-medium">
                     Personalized environmental advice based on your current telemetry.
                   </p>
                 </div>
@@ -244,17 +252,18 @@ export default function AIAdvisorPage() {
                     <Button 
                       key={prompt} 
                       variant="outline" 
-                      className="h-auto p-4 justify-start text-left border-zinc-200 hover:border-primary hover:bg-primary/5 rounded-2xl transition-all"
+                      className="h-auto p-4 justify-start text-left border-zinc-200 hover:border-primary hover:bg-primary/5 rounded-2xl transition-all focus-visible:ring-2 focus-visible:ring-primary outline-none"
                       onClick={() => handleSend(prompt)}
+                      aria-label={`Ask: ${prompt}`}
                     >
-                      <Zap className="h-4 w-4 mr-3 text-primary" />
-                      <span className="text-[11px] font-bold uppercase tracking-tight">{prompt}</span>
+                      <Zap className="h-4 w-4 mr-3 text-primary" aria-hidden="true" />
+                      <span className="text-[11px] font-black uppercase tracking-tight">{prompt}</span>
                     </Button>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="space-y-8 max-w-4xl mx-auto">
+              <div className="space-y-8 max-w-4xl mx-auto" role="log" aria-live="polite" aria-label="Advisor conversation history">
                 {messages.map((m: any, i: number) => (
                   <ChatMessage key={i} message={m} isUser={m.role === 'user'} />
                 ))}
@@ -275,7 +284,7 @@ export default function AIAdvisorPage() {
                     <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-3">
+                    <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Thinking...
                     </div>
@@ -283,10 +292,10 @@ export default function AIAdvisorPage() {
                 )}
 
                 {error && (
-                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-[11px] font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-[11px] font-black uppercase tracking-widest" role="alert">
                     <AlertCircle className="h-4 w-4" />
                     {error}
-                    <Button variant="ghost" className="ml-auto h-7 text-[10px] uppercase font-black" onClick={() => handleSend()}>Retry</Button>
+                    <Button variant="ghost" className="ml-auto h-7 text-[10px] uppercase font-black focus-visible:ring-2 focus-visible:ring-red-500" onClick={() => handleSend()}>Retry</Button>
                   </div>
                 )}
                 <div ref={scrollRef} />
@@ -298,17 +307,19 @@ export default function AIAdvisorPage() {
             <div className="max-w-4xl mx-auto relative group">
               <Input 
                 placeholder="Ask about your footprint..." 
+                aria-label="Advisor query"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 disabled={loading}
-                className="h-16 pl-6 pr-20 bg-white border-zinc-200 rounded-[1.5rem] shadow-xl shadow-black/5 focus-visible:ring-primary/20 text-sm"
+                className="h-16 pl-6 pr-20 bg-white border-zinc-200 rounded-[1.5rem] shadow-xl shadow-black/5 focus-visible:ring-primary text-sm font-medium"
               />
               <Button 
                 size="icon" 
                 onClick={() => handleSend()}
                 disabled={loading || !input.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 bg-primary hover:scale-105 transition-transform shadow-lg shadow-primary/20 rounded-xl"
+                aria-label="Send query"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 bg-primary hover:scale-105 transition-transform shadow-lg shadow-primary/20 rounded-xl focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </Button>

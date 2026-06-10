@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -30,8 +29,14 @@
 
 @layer base {
   * {
-    @apply border-border focus-visible:ring-primary/40 focus-visible:ring-offset-2 outline-none;
+    @apply border-border outline-none;
   }
+  
+  /* Robust visible focus rings for WCAG 2.1 compliance */
+  *:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
   body {
     @apply text-foreground;
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%);
@@ -39,10 +44,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
   }
-}
-
-:focus-visible {
-  @apply ring-2 ring-primary ring-offset-background;
 }
 
 .glass-card {
@@ -85,4 +86,17 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: hsl(140 30% 90%);
   border-radius: 10px;
+}
+
+/* Skip link styling */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

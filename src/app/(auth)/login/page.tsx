@@ -60,7 +60,6 @@ export default function LoginPage() {
       const user = result.user;
 
       const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      // Atomic setDoc with merge: true replaces getDoc + setDoc
       await setDoc(userRef, {
         fullName: user.displayName || 'Eco Warrior',
         email: user.email || '',
@@ -126,42 +125,46 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardHeader className="p-10 text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5" aria-hidden="true">
             <Leaf className="h-8 w-8 text-primary" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-3xl font-headline font-bold tracking-tight">{APP_METADATA.NAME}</CardTitle>
-            <CardDescription className="text-sm uppercase font-bold tracking-widest text-zinc-400">{APP_METADATA.TAGLINE}</CardDescription>
+            <CardDescription className="text-sm uppercase font-black tracking-widest text-zinc-600">{APP_METADATA.TAGLINE}</CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="p-10 pt-0 space-y-6">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Email Address</Label>
+              <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Email Address</Label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
+                  id="email"
                   type="email" 
+                  autoComplete="email"
                   placeholder="name@example.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Password</Label>
+              <Label htmlFor="password" title="Password" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
+                  id="password"
                   type="password" 
+                  autoComplete="current-password"
                   placeholder="••••••••" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-12 bg-zinc-50 border-zinc-100 rounded-xl"
+                  className="h-12 pl-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-primary"
                   required
                 />
               </div>
@@ -169,32 +172,34 @@ export default function LoginPage() {
 
             <Button 
               type="submit" 
-              className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
+              className="w-full h-12 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform focus-visible:ring-2 focus-visible:ring-primary"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Sign In"}
             </Button>
           </form>
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100"></span></div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-[0.2em]"><span className="bg-white/50 px-2 text-zinc-400">Or</span></div>
+          <div className="relative py-2" aria-hidden="true">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200"></span></div>
+            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-[0.2em]"><span className="bg-white px-2 text-zinc-600">Or</span></div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Button 
               variant="outline" 
-              className="h-12 border-zinc-200 font-bold rounded-xl flex items-center justify-center gap-2"
+              className="h-12 border-zinc-300 text-zinc-800 font-bold rounded-xl flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-primary"
               onClick={handleGoogleLogin}
               disabled={googleLoading}
+              aria-label="Sign in with Google"
             >
               {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Google</>}
             </Button>
             <Button 
               variant="outline" 
-              className="h-12 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2"
+              className="h-12 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-primary"
               onClick={handleDemoMode}
               disabled={demoLoading}
+              aria-label="Explore as Demo User"
             >
               {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4" /> Demo</>}
             </Button>
@@ -202,8 +207,8 @@ export default function LoginPage() {
         </CardContent>
 
         <CardFooter className="p-10 pt-0 flex flex-col gap-4 text-center">
-          <p className="text-xs text-zinc-500">
-            New to the network? <Link href="/register" className="text-primary font-bold hover:underline">Register Node</Link>
+          <p className="text-xs text-zinc-600 font-medium">
+            New to the network? <Link href="/register" className="text-primary font-bold hover:underline focus-visible:ring-1 focus-visible:ring-primary rounded">Register Node</Link>
           </p>
         </CardFooter>
       </Card>
