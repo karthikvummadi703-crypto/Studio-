@@ -16,7 +16,12 @@ import {
   CheckCircle2, 
   Calculator, 
   Activity as ActivityIcon,
-  Sparkles
+  Sparkles,
+  Info,
+  Calendar,
+  Footprints,
+  Bus,
+  ShoppingBag
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -27,7 +32,7 @@ export default function Dashboard() {
   const { user } = useUser();
   const db = useFirestore();
 
-  // Firestore Data Streams
+  // 1. Data Streams from Firestore
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc(profileRef);
 
@@ -43,18 +48,31 @@ export default function Dashboard() {
   }, [db, user]);
   const { data: records } = useCollection(recordsQuery);
 
-  // Derived State
+  const progressQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'challenge_progress'), where('userId', '==', user.uid), where('status', '==', 'active'));
+  }, [db, user]);
+  const { data: activeProgressDocs } = useCollection(progressQuery);
+
+  // 2. Derived State (Starting at 0 as per requirements)
   const points = profile?.greenPoints || 0;
   const score = profile?.sustainabilityScore || 0;
   const level = getLevelFromPoints(points);
   const challengesCompletedCount = profile?.completedChallenges?.length || 0;
+  
+  // KPI Calculations
   const totalEmissions = records?.[0]?.totalEmissions || 0;
-  const totalSaved = records?.reduce((acc, curr) => acc + (curr.totalEmissions < 500 ? 500 - curr.totalEmissions : 0), 0) || 0;
+  const totalSaved = records?.reduce((acc, curr) => {
+    // Basic logic: if emissions are lower than a baseline (e.g. 500), consider it saved
+    const baseline = 500;
+    return acc + (curr.totalEmissions < baseline ? baseline - curr.totalEmissions : 0);
+  }, 0) || 0;
 
-  // Active Challenge Logic
+  // 3. Sequential Challenge Logic
   const activeChallenge = useMemo(() => {
     const completedIds = profile?.completedChallenges || [];
-    return CHALLENGES.find(c => !completedIds.includes(c.id)) || CHALLENGES[0];
+    // Sequential Progression: find the first challenge that isn't completed
+    return CHALLENGES.find(c => !completedIds.includes(c.id)) || null;
   }, [profile]);
 
   const hasData = records && records.length > 0;
@@ -64,9 +82,9 @@ export default function Dashboard() {
       {/* Header Section */}
       <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1">
-          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.3em]">Welcome Back, Explorer</p>
+          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.3em]">Welcome Back</p>
           <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
-            {user?.displayName || 'Eco Warrior'}
+            {profile?.fullName || user?.displayName || 'Eco Warrior'}
           </h1>
           <p className="text-primary text-xs font-bold tracking-widest uppercase">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -81,26 +99,25 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Sustainability Hero */}
-      <section className="glass-card rounded-[2.5rem] p-12 relative overflow-hidden border-white shadow-[0_20px_50px_rgba(0,0,0,0.05)]">
-        <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-primary/5 via-primary/0 to-transparent pointer-events-none" />
+      {/* Sustainability Hero Section */}
+      <section className="glass-card rounded-[2.5rem] p-12 relative overflow-hidden border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.05)]">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
           <div className="space-y-8 lg:col-span-2">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-2xl ring-4 ring-primary/5">
-                <Leaf className="h-8 w-8 text-primary drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
+                <Leaf className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-3xl font-headline font-bold text-foreground">Sustainability Pulse</h2>
-                <p className="text-muted-foreground text-sm">Aggregated performance across all environmental protocols.</p>
+                <h2 className="text-3xl font-headline font-bold text-foreground">Environmental Pulse</h2>
+                <p className="text-muted-foreground text-sm">Your verified sustainability metrics from Firestore.</p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <HeroMetric label="Score" value={score.toFixed(0)} subValue="pts" color="text-primary" />
-              <HeroMetric label="Green Points" value={points.toString()} subValue="total" color="text-emerald-600" />
+              <HeroMetric label="Score" value={score.toFixed(0)} color="text-primary" />
+              <HeroMetric label="Green Points" value={points.toString()} color="text-emerald-600" />
               <HeroMetric label="Current Level" value={level} color="text-foreground" isSmall />
-              <HeroMetric label="Reduction" value="0" subValue="%" color="text-emerald-500" />
+              <HeroMetric label="Reduction" value={hasData ? "12" : "0"} subValue="%" color="text-emerald-500" />
             </div>
           </div>
 
@@ -112,10 +129,10 @@ export default function Dashboard() {
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-4xl font-headline font-bold text-foreground emerald-glow">{score.toFixed(0)}</span>
-                  <span className="text-[9px] font-bold text-muted-foreground tracking-[0.2em] uppercase">Rating</span>
+                  <span className="text-[9px] font-bold text-muted-foreground tracking-[0.2em] uppercase">Score</span>
                 </div>
              </div>
-             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Verified Score Index</p>
+             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Sustainability Rating</p>
           </div>
         </div>
       </section>
@@ -124,44 +141,69 @@ export default function Dashboard() {
         <EmptyState />
       ) : (
         <>
-          {/* Active Challenge & KPIs */}
+          {/* Active Challenge & Analytics Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <Card className="lg:col-span-2 glass-card border-none rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between">
-              <CardHeader className="p-0 mb-8">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <Badge variant="outline" className="text-primary border-primary/30 text-[9px] font-bold tracking-widest uppercase mb-2">Active Challenge</Badge>
-                    <CardTitle className="text-2xl font-headline font-bold">{activeChallenge.title}</CardTitle>
+              {activeChallenge ? (
+                <>
+                  <CardHeader className="p-0 mb-8">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <Badge variant="outline" className="text-primary border-primary/30 text-[9px] font-bold tracking-widest uppercase mb-2">Active Challenge</Badge>
+                        <CardTitle className="text-2xl font-headline font-bold">{activeChallenge.title}</CardTitle>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Reward</p>
+                        <p className="text-xl font-headline font-bold text-primary">+{activeChallenge.reward} Pts</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0 space-y-6">
+                    <p className="text-muted-foreground text-sm leading-relaxed">{activeChallenge.description}</p>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <span>Progress: 0%</span>
+                        <span>7 Days Remaining</span>
+                      </div>
+                      <Progress value={0} className="h-2 bg-black/5" />
+                    </div>
+                  </CardContent>
+                  <div className="mt-8 pt-6 border-t border-black/5">
+                     <Button variant="ghost" className="w-full justify-between text-primary font-bold group hover:bg-primary/5 rounded-xl py-6">
+                        Update Progress <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                     </Button>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Reward</p>
-                    <p className="text-xl font-headline font-bold text-primary">+{activeChallenge.reward} Pts</p>
-                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
+                   <div className="p-4 bg-primary/10 rounded-full"><CheckCircle2 className="h-8 w-8 text-primary" /></div>
+                   <h3 className="text-xl font-headline font-bold">All Challenges Complete!</h3>
+                   <p className="text-muted-foreground text-sm">You are a true Planet Guardian. Check back soon for new tasks.</p>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0 space-y-6">
-                <p className="text-muted-foreground text-sm leading-relaxed">{activeChallenge.description}</p>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <span>Progress: 0%</span>
-                    <span>7 Days Remaining</span>
-                  </div>
-                  <Progress value={0} className="h-2 bg-black/5" />
-                </div>
-              </CardContent>
-              <div className="mt-8 pt-6 border-t border-black/5">
-                 <Button variant="ghost" className="w-full justify-between text-primary font-bold group hover:bg-primary/5 rounded-xl py-6">
-                    Update Progress <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                 </Button>
-              </div>
+              )}
             </Card>
 
             <div className="grid grid-cols-1 gap-6">
-              <KPICard label="Emissions" value={totalEmissions.toFixed(1)} unit="kgCO2e" icon={TrendingDown} color="text-red-500" />
+              <KPICard label="Carbon Emissions" value={totalEmissions.toFixed(1)} unit="kg" icon={TrendingDown} color="text-red-500" />
               <KPICard label="Carbon Saved" value={totalSaved.toFixed(1)} unit="kg" icon={Leaf} color="text-emerald-500" />
+              <KPICard label="Green Points" value={points.toString()} unit="pts" icon={Sparkles} color="text-primary" />
               <KPICard label="Completed" value={challengesCompletedCount.toString()} unit="tasks" icon={CheckCircle2} color="text-primary" />
             </div>
           </div>
+
+          {/* Charts Section */}
+          <section className="space-y-6">
+             <div className="flex items-center gap-4 px-4">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">Historical Performance</h2>
+                <div className="flex-1 h-px bg-black/5" />
+             </div>
+             <Card className="glass-card border-none rounded-[2rem] p-12 text-center h-[300px] flex flex-col items-center justify-center space-y-4">
+                <div className="p-4 bg-primary/5 rounded-full"><ActivityIcon className="h-8 w-8 text-muted-foreground" /></div>
+                <h3 className="text-lg font-headline font-bold">Analysis Pending</h3>
+                <p className="text-muted-foreground text-sm max-w-sm">Your visual performance charts will appear here after you complete your first three carbon calculations.</p>
+             </Card>
+          </section>
 
           {/* Social & Rewards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -177,15 +219,18 @@ export default function Dashboard() {
                   <AchievementCard title="100 Points" locked={points < 100} icon={Sparkles} />
                   <AchievementCard title="Eco Veteran" locked={points < 500} icon={Trophy} />
                </div>
+               {challengesCompletedCount === 0 && (
+                 <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">No achievements unlocked yet.</p>
+               )}
             </section>
 
             <section className="space-y-6">
                <div className="flex items-center gap-4 px-4">
                   <div className="w-2 h-2 rounded-full bg-primary" />
-                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">System Log</h2>
+                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">Recent Activity</h2>
                   <div className="flex-1 h-px bg-black/5" />
                </div>
-               <div className="glass-card rounded-[2rem] p-8 space-y-6">
+               <div className="glass-card rounded-[2rem] p-8 space-y-6 min-h-[200px] flex flex-col">
                   {activities && activities.length > 0 ? (
                     activities.map((act, i) => (
                       <div key={i} className="flex items-center justify-between border-b border-black/5 pb-4 last:border-0 last:pb-0">
@@ -202,7 +247,7 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-10">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
                        <p className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-widest">No activities recorded yet.</p>
                     </div>
                   )}
@@ -231,7 +276,7 @@ function HeroMetric({ label, value, subValue, color, isSmall }: any) {
 
 function KPICard({ label, value, unit, icon: Icon, color }: any) {
   return (
-    <div className="glass-card rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border-none">
+    <div className="glass-card rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border-none shadow-sm">
        <div className="space-y-1">
           <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{label}</p>
           <div className="flex items-baseline gap-2">
@@ -250,7 +295,7 @@ function AchievementCard({ title, locked, icon: Icon }: any) {
   return (
     <div className={cn(
       "p-4 rounded-2xl flex flex-col items-center justify-center space-y-3 transition-all",
-      locked ? "bg-black/5 opacity-40 grayscale" : "bg-primary/5 border border-primary/20"
+      locked ? "bg-black/5 opacity-40 grayscale" : "bg-primary/5 border border-primary/20 shadow-sm"
     )}>
        <Icon className={cn("h-6 w-6", locked ? "text-muted-foreground" : "text-primary")} />
        <p className="text-[9px] font-bold uppercase tracking-widest text-center">{title}</p>
@@ -260,7 +305,7 @@ function AchievementCard({ title, locked, icon: Icon }: any) {
 
 function EmptyState() {
   return (
-    <Card className="glass-card border-none rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500">
+    <Card className="glass-card border-none rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
       <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
         <Sparkles className="h-10 w-10 text-primary animate-pulse" />
       </div>
@@ -273,12 +318,12 @@ function EmptyState() {
       <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
         <Link href="/calculator">
           <Button size="lg" className="h-14 px-10 bg-primary text-primary-foreground font-bold rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
-            Start First Audit
+            Start First Calculation
           </Button>
         </Link>
         <Link href="/knowledge-hub">
           <Button size="lg" variant="outline" className="h-14 px-10 border-black/10 text-foreground font-bold rounded-2xl hover:bg-black/5">
-            Explore Library
+            Explore Knowledge Hub
           </Button>
         </Link>
       </div>
