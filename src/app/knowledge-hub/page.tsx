@@ -203,7 +203,7 @@ export default function KnowledgeHubPage() {
                   <div className="relative z-10 space-y-6">
                     <div className="flex items-center gap-3">
                       <Lightbulb className="h-5 w-5 text-primary" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Strategic Insight</h4>
+                      <h4 className="text-[9px] font-black uppercase tracking-widest text-primary">Strategic Insight</h4>
                     </div>
                     <p className="text-lg font-headline font-bold leading-relaxed text-zinc-100">
                       {latestRecord.mode === 'car' || latestRecord.mode === 'motorcycle' ? 

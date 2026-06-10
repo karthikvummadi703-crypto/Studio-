@@ -9,6 +9,7 @@ import { Loader2, Sparkles, Zap, Car, Utensils, ShoppingBag, Send } from 'lucide
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { GenerateReductionPlanOutput } from '@/ai/flows/generate-reduction-plan';
+import Link from 'next/link';
 
 const InsightCategoryCard = dynamic(() => import('./insight-card'), { ssr: false });
 
