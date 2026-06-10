@@ -16,11 +16,13 @@ import {
   Leaf, 
   Zap,
   ArrowUpRight,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const EDUCATIONAL_TOPICS = [
   {
@@ -73,144 +75,164 @@ export default function KnowledgeHubPage() {
   const latestRecord = latestRecords?.[0];
 
   return (
-    <div className="space-y-10 pb-20 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest">
-            <Info className="h-3 w-3" /> Learning Center
-          </div>
-          <h1 className="text-5xl font-headline font-bold text-foreground">Knowledge Hub</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl">
-            Expert guidance and personalized insights for your sustainability journey.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 space-y-12 animate-in fade-in duration-700">
+      <header className="text-center space-y-3">
+        <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
+          Knowledge Hub
+        </h1>
+        <p className="text-zinc-500 text-sm max-w-lg mx-auto">
+          Expert guidance and personalized insights for your sustainability journey.
+        </p>
       </header>
 
       <Tabs defaultValue="educational" className="w-full">
-        <TabsList className="bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl h-auto mb-10 inline-flex border border-black/5">
-          <TabsTrigger value="educational" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
-             <BookOpen className="mr-2 h-5 w-5" /> Educational Library
-          </TabsTrigger>
-          <TabsTrigger value="personalized" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
-             <Sparkles className="mr-2 h-5 w-5" /> Personalized Impact
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex justify-center mb-12">
+          <TabsList className="bg-white border border-zinc-200 p-1 rounded-xl h-auto shadow-sm">
+            <TabsTrigger 
+              value="educational" 
+              className="py-2.5 px-6 rounded-lg font-headline text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold transition-all"
+            >
+               <BookOpen className="mr-2 h-4 w-4" /> Educational Library
+            </TabsTrigger>
+            <TabsTrigger 
+              value="personalized" 
+              className="py-2.5 px-6 rounded-lg font-headline text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold transition-all"
+            >
+               <Sparkles className="mr-2 h-4 w-4" /> Personalized Impact
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="educational" className="animate-in fade-in duration-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <TabsContent value="educational" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {EDUCATIONAL_TOPICS.map((topic, i) => (
-              <Card key={i} className="glass-card border-none hover:bg-white/60 transition-all cursor-pointer group flex flex-col hover:-translate-y-1 shadow-lg">
-                <CardHeader className="pb-4">
+              <Card key={i} className="bg-white border border-zinc-200 shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+                <CardHeader className="p-6 pb-4">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-primary/10 rounded-2xl group-hover:bg-primary/20 transition-colors">
-                      <topic.icon className="h-6 w-6 text-primary" />
+                    <div className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl">
+                      <topic.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary">{topic.readTime}</Badge>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      <Clock className="h-3 w-3" /> {topic.readTime}
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="w-fit text-[10px] uppercase mb-2 bg-black/5 border-black/5 text-muted-foreground font-bold">{topic.category}</Badge>
-                  <CardTitle className="font-headline text-2xl group-hover:text-primary transition-colors text-foreground">{topic.title}</CardTitle>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">{topic.category}</p>
+                    <CardTitle className="font-headline text-xl text-foreground group-hover:text-primary transition-colors">
+                      {topic.title}
+                    </CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="flex-1">
-                  <p className="text-muted-foreground leading-relaxed text-sm">{topic.desc}</p>
-                </CardContent>
-                <CardContent className="pt-0">
-                   <Button variant="ghost" className="w-full justify-between text-primary font-bold px-0 hover:bg-transparent group/btn">
-                      Read Article <ArrowUpRight className="h-4 w-4 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-                   </Button>
+                <CardContent className="p-6 pt-0 space-y-6">
+                  <p className="text-zinc-500 text-sm leading-relaxed line-clamp-3">
+                    {topic.desc}
+                  </p>
+                  <Button variant="outline" className="w-full h-11 border-zinc-200 text-sm font-bold rounded-xl hover:bg-zinc-50 hover:text-primary transition-all">
+                    Read Article <ArrowUpRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="personalized" className="animate-in fade-in duration-700">
+        <TabsContent value="personalized" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
           {latestRecord ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="glass-card border-none bg-primary/5 border border-primary/10 shadow-xl">
-                <CardHeader>
-                  <CardTitle className="font-headline text-2xl flex items-center gap-3 text-foreground">
-                    <TrendingDown className="h-7 w-7 text-primary" />
-                    Impact Breakdown
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">Generated from your audit on {new Date(latestRecord.timestamp).toLocaleDateString()}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8 pt-4">
-                  <div className="p-6 rounded-3xl bg-white/40 border border-black/5 text-center shadow-inner">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Footprint</p>
-                    <p className="text-6xl font-headline font-bold text-primary">{latestRecord.totalEmissions.toFixed(1)} <span className="text-xl">kgCO2e</span></p>
+              {/* Impact Card */}
+              <Card className="bg-white border border-zinc-200 shadow-sm rounded-2xl overflow-hidden h-fit">
+                <CardHeader className="p-8 border-b border-zinc-100 bg-zinc-50/50">
+                  <div className="flex items-center gap-3">
+                    <TrendingDown className="h-5 w-5 text-primary" />
+                    <CardTitle className="font-headline text-lg">Impact Breakdown</CardTitle>
                   </div>
+                  <CardDescription className="text-[10px] font-bold uppercase tracking-widest mt-1">
+                    Telemetry from {new Date(latestRecord.timestamp).toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  <div className="text-center py-6 bg-zinc-50 rounded-2xl border border-zinc-100">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Current Footprint</p>
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-5xl font-headline font-bold text-foreground">{latestRecord.totalEmissions.toFixed(1)}</span>
+                      <span className="text-sm font-bold text-zinc-400 uppercase">kgCO2e</span>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-6">
                     {Object.entries(latestRecord.breakdown).map(([key, val]: [string, any]) => (
-                      <div key={key} className="space-y-3">
+                      <div key={key} className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="capitalize font-bold text-sm tracking-wide text-foreground">{key.replace('home', 'Home ')}</span>
-                          <span className="font-mono text-primary font-bold">{((val / latestRecord.totalEmissions) * 100).toFixed(0)}%</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-zinc-500 capitalize">{key.replace('home', 'Home ')}</span>
+                          <span className="text-xs font-bold text-primary">{((val / latestRecord.totalEmissions) * 100).toFixed(0)}%</span>
                         </div>
-                        <Progress value={(val / latestRecord.totalEmissions) * 100} className="h-2 bg-black/5" />
+                        <Progress value={(val / latestRecord.totalEmissions) * 100} className="h-1.5 bg-zinc-100" />
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="space-y-8">
-                <Card className="glass-card border-none relative overflow-hidden h-fit shadow-xl">
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <Sparkles className="h-32 w-32 text-primary" />
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="font-headline text-2xl flex items-center gap-3 text-foreground">
-                      <Lightbulb className="h-7 w-7 text-primary" />
-                      Strategic Insights
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    <div className="p-6 rounded-3xl bg-primary/10 border border-primary/20 italic text-lg leading-relaxed text-foreground">
+              {/* Insights Card */}
+              <div className="space-y-6">
+                <Card className="bg-zinc-900 text-white rounded-2xl p-8 border-none relative overflow-hidden shadow-xl">
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex items-center gap-3">
+                      <Lightbulb className="h-5 w-5 text-primary" />
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Strategic Insight</h4>
+                    </div>
+                    <p className="text-lg font-headline font-bold leading-relaxed text-zinc-100">
                       {latestRecord.breakdown.transportation > latestRecord.breakdown.homeEnergy ? 
-                        `"Your transportation sector accounts for ${((latestRecord.breakdown.transportation / latestRecord.totalEmissions) * 100).toFixed(0)}% of your footprint. Switching to public transport just twice a week could reduce your overall annual emissions by 18%."` :
-                        `"Home energy is your biggest impact at ${((latestRecord.breakdown.homeEnergy / latestRecord.totalEmissions) * 100).toFixed(0)}%. Installing a smart thermostat and improving insulation could save you up to 300kg of CO2 per year."`
+                        `Your transportation footprint is ${((latestRecord.breakdown.transportation / latestRecord.totalEmissions) * 100).toFixed(0)}% of your total impact. Switching to public transit just twice a week could save 18% of your annual emissions.` :
+                        `Home energy is your primary driver at ${((latestRecord.breakdown.homeEnergy / latestRecord.totalEmissions) * 100).toFixed(0)}%. Optimizing heating schedules could reduce your footprint by up to 300kg annually.`
                       }
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-white/10 border border-white/5 space-y-1">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-primary">Top Action</p>
+                        <p className="text-sm font-bold">Renewable Transition</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/10 border border-white/5 space-y-1">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-primary">Efficiency</p>
+                        <p className="text-sm font-bold">Smart Home Audit</p>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="p-5 rounded-2xl bg-white/40 border border-black/5 space-y-2 shadow-sm">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Top Action</p>
-                          <p className="font-bold text-foreground text-sm">Renewable Switch</p>
-                          <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold">High Impact</Badge>
-                       </div>
-                       <div className="p-5 rounded-2xl bg-white/40 border border-black/5 space-y-2 shadow-sm">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Efficiency</p>
-                          <p className="font-bold text-foreground text-sm">Smart Heating</p>
-                          <Badge className="bg-accent/20 text-accent border-none text-[9px] font-bold">Med Impact</Badge>
-                       </div>
-                    </div>
-                  </CardContent>
+                  </div>
+                  <Sparkles className="absolute -bottom-6 -right-6 h-32 w-32 text-primary opacity-10" />
                 </Card>
-                
-                <Card className="glass-card border-none bg-secondary/30 shadow-md">
-                   <CardHeader className="py-4">
-                     <CardTitle className="font-headline text-lg text-foreground">Future Projection</CardTitle>
-                   </CardHeader>
-                   <CardContent>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        If you implement our top three recommendations, your sustainability score will likely increase to <span className="text-foreground font-bold">85/100</span> by next quarter.
+
+                <Card className="bg-white border border-zinc-200 shadow-sm rounded-2xl p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-emerald-50 rounded-lg shrink-0">
+                      <Info className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-foreground">Projection Analysis</h4>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        Based on your current habits, implementing the suggested efficiency audits will improve your Sustainability Score by approximately <span className="text-emerald-600 font-bold">12 points</span> by next month.
                       </p>
-                   </CardContent>
+                    </div>
+                  </div>
                 </Card>
               </div>
             </div>
           ) : (
-            <Card className="glass-card border-none text-center py-24 shadow-2xl">
-              <CardContent className="space-y-6">
-                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-4 ring-primary/5">
-                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+            <Card className="bg-white border border-zinc-200 shadow-sm rounded-2xl text-center py-24">
+              <CardContent className="space-y-8 max-w-sm mx-auto">
+                <div className="w-16 h-16 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                  <Sparkles className="h-8 w-8 text-primary/40" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-headline font-bold text-foreground">Insights Locked</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto text-sm">Complete your first impact audit to unlock hyper-personalized carbon analysis and reduction strategies.</p>
+                  <h3 className="text-xl font-headline font-bold text-foreground">Insights Locked</h3>
+                  <p className="text-zinc-500 text-sm leading-relaxed">
+                    Complete your first carbon impact audit to unlock hyper-personalized analysis and reduction strategies.
+                  </p>
                 </div>
-                <Button asChild className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-                  <Link href="/calculator">Start Impact Audit</Link>
-                </Button>
+                <Link href="/calculator" className="block">
+                  <Button className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/10 hover:scale-[1.02] transition-transform">
+                    Start Impact Audit
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           )}
