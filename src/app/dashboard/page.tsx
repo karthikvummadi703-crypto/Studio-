@@ -2,203 +2,299 @@
 "use client";
 
 import { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useUser, useDoc, useCollection, useFirestore } from '@/firebase';
+import { doc, query, collection, orderBy, limit, where } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Leaf, 
-  ArrowUp, 
   Zap, 
-  TrendingDown,
-  Sparkles,
-  Trophy
+  TrendingDown, 
+  Trophy, 
+  ArrowRight, 
+  CheckCircle2, 
+  Calculator, 
+  BookOpen,
+  Activity as ActivityIcon,
+  Sparkles
 } from 'lucide-react';
-import { useUser, useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { CHALLENGES } from '@/lib/challenges';
+import { getLevelFromPoints } from '@/lib/levels';
 
 export default function Dashboard() {
   const { user } = useUser();
   const db = useFirestore();
 
+  // Firestore Data Streams
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc(profileRef);
 
+  const activitiesQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'activities'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'), limit(5));
+  }, [db, user]);
+  const { data: activities } = useCollection(activitiesQuery);
+
+  const recordsQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'calculator_records'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'));
+  }, [db, user]);
+  const { data: records } = useCollection(recordsQuery);
+
+  const progressQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'challenge_progress'), where('userId', '==', user.uid));
+  }, [db, user]);
+  const { data: challengeProgress } = useCollection(progressQuery);
+
+  // Derived State
+  const points = profile?.greenPoints || 0;
+  const score = profile?.sustainabilityScore || 0;
+  const level = getLevelFromPoints(points);
+  const challengesCompletedCount = profile?.completedChallenges?.length || 0;
+  const totalEmissions = records?.[0]?.totalEmissions || 0;
+  const totalSaved = records?.reduce((acc, curr) => acc + (curr.totalEmissions < 500 ? 500 - curr.totalEmissions : 0), 0) || 0;
+
+  // Active Challenge Logic
+  const activeChallenge = useMemo(() => {
+    const completedIds = profile?.completedChallenges || [];
+    return CHALLENGES.find(c => !completedIds.includes(c.id)) || CHALLENGES[0];
+  }, [profile]);
+
+  const currentProgress = useMemo(() => {
+    if (!challengeProgress || !activeChallenge) return null;
+    return challengeProgress.find(p => p.challengeId === activeChallenge.id);
+  }, [challengeProgress, activeChallenge]);
+
+  const hasData = records && records.length > 0;
+
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Environmental Overview Banner */}
-      <section className="glass-card rounded-[2.5rem] p-10 relative overflow-hidden border-primary/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 via-primary/0 to-transparent" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-3">
+    <div className="space-y-12 animate-in fade-in duration-1000">
+      {/* Header Section */}
+      <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-1">
+          <p className="text-muted-foreground/60 text-[10px] font-bold uppercase tracking-[0.3em]">Welcome Back, Explorer</p>
+          <h1 className="text-4xl font-headline font-bold text-white tracking-tight">
+            {user?.displayName || 'Eco Warrior'}
+          </h1>
+          <p className="text-primary/60 text-xs font-bold tracking-widest uppercase">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+        <div className="flex gap-4">
+           <Link href="/calculator">
+            <Button size="sm" className="bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 rounded-xl px-5 py-5 font-bold tracking-widest text-[10px] uppercase">
+              <Calculator className="h-4 w-4 mr-2" /> New Audit
+            </Button>
+           </Link>
+        </div>
+      </section>
+
+      {/* Sustainability Hero */}
+      <section className="glass-card rounded-[2.5rem] p-12 relative overflow-hidden border-primary/20 shadow-[0_30px_60px_rgba(0,0,0,0.6)] group">
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-primary/10 via-primary/0 to-transparent pointer-events-none" />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+          <div className="space-y-8 lg:col-span-2">
             <div className="flex items-center gap-4">
-              <h1 className="text-4xl font-headline font-bold text-white tracking-tight">Environmental Overview</h1>
-              <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1">
-                Active Cycle: Q2 2026
-              </Badge>
+              <div className="p-3 bg-primary/20 rounded-2xl ring-4 ring-primary/5">
+                <Leaf className="h-8 w-8 text-primary drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-headline font-bold text-white">Sustainability Pulse</h2>
+                <p className="text-muted-foreground/60 text-sm">Aggregated performance across all environmental protocols.</p>
+              </div>
             </div>
-            <p className="text-muted-foreground/60 text-base max-w-xl font-body leading-relaxed">
-              Your real-time sustainability metrics, synthesized with global ecological standards and AI-driven telemetry.
-            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <HeroMetric label="Score" value={score.toFixed(0)} subValue="pts" color="text-primary" />
+              <HeroMetric label="Green Points" value={points.toString()} subValue="total" color="text-accent" />
+              <HeroMetric label="Current Level" value={level} color="text-white" isSmall />
+              <HeroMetric label="Reduction" value="0" subValue="%" color="text-emerald-400" />
+            </div>
           </div>
-          <div className="flex items-center gap-8 bg-white/5 px-6 py-4 rounded-3xl border border-white/5 backdrop-blur-md">
-             <div className="text-right">
-                <span className="text-[10px] font-bold text-muted-foreground/40 tracking-[0.2em] uppercase block mb-1">Engine State</span>
-                <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[10px] font-bold px-2 py-0">LIVE SYNC</Badge>
+
+          <div className="flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-[2rem] border border-white/5 backdrop-blur-xl">
+             <div className="relative flex items-center justify-center">
+                <svg className="w-40 h-40 transform -rotate-90">
+                  <circle className="text-white/5" strokeWidth="10" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80" />
+                  <circle className="text-primary shadow-[0_0_20px_rgba(16,185,129,0.5)]" strokeWidth="10" strokeDasharray="440" strokeDashoffset={440 * (1 - score / 100)} strokeLinecap="round" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80" />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-4xl font-headline font-bold text-white emerald-glow">{score.toFixed(0)}</span>
+                  <span className="text-[9px] font-bold text-muted-foreground/40 tracking-[0.2em] uppercase">Rating</span>
+                </div>
              </div>
-             <div className="h-10 w-px bg-white/10" />
-             <div className="text-right">
-                <span className="text-[10px] font-bold text-muted-foreground/40 tracking-[0.2em] uppercase block mb-1">Node Status</span>
-                <span className="text-xs font-bold text-white tracking-tight">Verified Proxy</span>
-             </div>
+             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Verified Score Index</p>
           </div>
         </div>
       </section>
 
-      {/* Overview Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {/* Carbon Score Card */}
-        <Card className="glass-card border-none rounded-[2rem] overflow-hidden relative group transition-all hover:translate-y-[-4px]">
-          <div className="absolute top-6 right-6 flex flex-col items-end opacity-60">
-             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground mb-1">Score Index</span>
-             <Badge variant="outline" className="text-[9px] text-primary border-primary/20 px-2 py-0 h-5 uppercase bg-primary/5">Optimal Range</Badge>
-          </div>
-          <CardContent className="p-10 flex flex-col items-center justify-center space-y-8">
-            <div className="relative flex items-center justify-center">
-               <svg className="w-48 h-48 transform -rotate-90">
-                 <circle className="text-white/5" strokeWidth="10" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
-                 <circle className="text-primary shadow-[0_0_20px_rgba(16,185,129,0.5)]" strokeWidth="10" strokeDasharray="534" strokeDashoffset={534 * (1 - (profile?.sustainabilityScore || 75) / 100)} strokeLinecap="round" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
-               </svg>
-               <div className="absolute flex flex-col items-center">
-                 <span className="text-5xl font-headline font-bold text-white emerald-glow">{profile?.sustainabilityScore || 75}</span>
-                 <span className="text-[10px] font-bold text-muted-foreground/60 tracking-[0.2em] uppercase mt-2">Rating</span>
-               </div>
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-[11px] font-bold text-white tracking-[0.25em] uppercase">Carbon Score</p>
-              <p className="text-[11px] text-muted-foreground/40 leading-relaxed px-2">Aggregated performance across transportation, energy, and diet protocols.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Analysis Card */}
-        <Card className="glass-card border-none rounded-[2rem] overflow-hidden relative transition-all hover:translate-y-[-4px]">
-          <div className="absolute top-6 right-6 flex flex-col items-end opacity-60">
-             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground mb-1">Analysis</span>
-             <Badge variant="outline" className="text-[9px] border-white/10 px-2 py-0 h-5 uppercase bg-white/5">Weekly Cycle</Badge>
-          </div>
-          <CardContent className="p-10 flex flex-col h-full justify-between space-y-12">
-            <div className="flex items-end justify-between h-40 pt-10 px-2">
-               {[40, 70, 45, 90, 60, 80].map((h, i) => (
-                 <div key={i} className="w-2 bg-primary/20 rounded-full relative group cursor-help h-full flex items-end">
-                    <div className="w-full bg-primary rounded-full transition-all group-hover:bg-white" style={{ height: `${h}%` }} />
-                 </div>
-               ))}
-            </div>
-            <div className="text-center space-y-4 pt-4 border-t border-white/5">
-              <p className="text-[11px] font-bold text-white tracking-[0.25em] uppercase">CO₂ Emissions</p>
-              <div className="flex items-center justify-center gap-2">
-                 <TrendingDown className="h-4 w-4 text-emerald-400" />
-                 <span className="text-lg font-headline font-bold text-white">-12.4%</span>
-                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest">v. Prev</span>
+      {!hasData ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* Active Challenge & KPIs */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Card className="lg:col-span-2 glass-card border-none rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between">
+              <CardHeader className="p-0 mb-8">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <Badge variant="outline" className="text-primary border-primary/30 text-[9px] font-bold tracking-widest uppercase mb-2">Active Challenge</Badge>
+                    <CardTitle className="text-2xl font-headline font-bold">{activeChallenge.title}</CardTitle>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Reward</p>
+                    <p className="text-xl font-headline font-bold text-primary">+{activeChallenge.reward} Pts</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 space-y-6">
+                <p className="text-muted-foreground text-sm leading-relaxed">{activeChallenge.description}</p>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <span>Progress: 0%</span>
+                    <span>7 Days Remaining</span>
+                  </div>
+                  <Progress value={0} className="h-2 bg-white/5" />
+                </div>
+              </CardContent>
+              <div className="mt-8 pt-6 border-t border-white/5">
+                 <Button variant="ghost" className="w-full justify-between text-primary font-bold group hover:bg-primary/10 rounded-xl py-6">
+                    Update Progress <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </Card>
 
-        {/* CO2 Saved Card */}
-        <Card className="glass-card border-none rounded-[2rem] overflow-hidden relative transition-all hover:translate-y-[-4px]">
-          <div className="absolute top-6 right-6 flex flex-col items-end opacity-60">
-             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-muted-foreground mb-1">Net Savings</span>
-             <span className="text-xs font-bold text-primary tracking-tight">342.5 kg</span>
+            <div className="grid grid-cols-1 gap-6">
+              <KPICard label="Emissions" value={totalEmissions.toFixed(1)} unit="kgCO2e" icon={TrendingDown} color="text-red-400" />
+              <KPICard label="Carbon Saved" value={totalSaved.toFixed(1)} unit="kg" icon={Leaf} color="text-emerald-400" />
+              <KPICard label="Completed" value={challengesCompletedCount.toString()} unit="tasks" icon={CheckCircle2} color="text-primary" />
+            </div>
           </div>
-          <CardContent className="p-10 flex flex-col items-center justify-center space-y-12">
-            <div className="w-32 h-32 rounded-[2.5rem] border border-white/5 flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 to-transparent shadow-inner">
-               <ArrowUp className="h-12 w-12 text-primary drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-               <span className="text-[9px] font-bold text-white uppercase mt-3 tracking-[0.2em]">Verified</span>
-            </div>
-            <div className="text-center space-y-3">
-              <p className="text-[11px] font-bold text-white tracking-[0.25em] uppercase">CO₂ Offset</p>
-              <p className="text-[11px] text-muted-foreground/40 leading-relaxed">Calculated through active avoidance of carbon-intensive supply chains.</p>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Green Points Card */}
-        <Card className="glass-card border-none rounded-[2rem] overflow-hidden relative bg-primary/5 transition-all hover:translate-y-[-4px]">
-          <div className="absolute top-6 right-6 flex flex-col items-end">
-             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-primary/60 mb-1">Rewards</span>
-             <Trophy className="h-4 w-4 text-primary" />
-          </div>
-          <CardContent className="p-10 flex flex-col items-center justify-center space-y-10">
-            <div className="w-28 h-28 transform rotate-45 border-2 border-primary/30 flex items-center justify-center bg-[#0c1413] shadow-[0_0_30px_rgba(16,185,129,0.2)] rounded-2xl">
-               <div className="transform -rotate-45 flex flex-col items-center">
-                  <span className="text-5xl font-headline font-bold text-primary emerald-glow">{profile?.greenPoints || 850}</span>
-                  <span className="text-[9px] font-bold text-primary/40 tracking-[0.2em] uppercase mt-2">Points</span>
+          {/* Social & Rewards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="space-y-6">
+               <div className="flex items-center gap-4 px-4">
+                  <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
+                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-white/60">Milestone Rewards</h2>
+                  <div className="flex-1 h-px bg-white/5" />
                </div>
-            </div>
-            <div className="text-center space-y-3">
-              <p className="text-[11px] font-bold text-white tracking-[0.25em] uppercase">Green Equity</p>
-              <p className="text-[11px] text-muted-foreground/40 leading-relaxed px-2">Convertible points earned through verified sustainability milestones.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+               <div className="glass-card rounded-[2rem] p-8 grid grid-cols-2 gap-4">
+                  <AchievementCard title="First Audit" locked={!hasData} icon={Calculator} />
+                  <AchievementCard title="First Challenge" locked={challengesCompletedCount === 0} icon={Trophy} />
+                  <AchievementCard title="100 Points" locked={points < 100} icon={Sparkles} />
+                  <AchievementCard title="Eco Veteran" locked={points < 500} icon={Trophy} />
+               </div>
+            </section>
 
-      {/* Social & Integrations Hub */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-4">
-        <section className="space-y-6">
-          <div className="flex items-center gap-4 px-4">
-            <div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
-            <h2 className="text-[12px] font-bold tracking-[0.3em] uppercase text-white">Eco Community Network</h2>
-            <div className="flex-1 h-px bg-white/5" />
+            <section className="space-y-6">
+               <div className="flex items-center gap-4 px-4">
+                  <div className="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
+                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-white/60">System Log</h2>
+                  <div className="flex-1 h-px bg-white/5" />
+               </div>
+               <div className="glass-card rounded-[2rem] p-8 space-y-6">
+                  {activities && activities.length > 0 ? (
+                    activities.map((act, i) => (
+                      <div key={i} className="flex items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                         <div className="flex items-center gap-4">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                               <ActivityIcon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                               <p className="text-[11px] font-bold text-white">{act.description}</p>
+                               <p className="text-[9px] text-muted-foreground uppercase">{new Date(act.timestamp).toLocaleDateString()}</p>
+                            </div>
+                         </div>
+                         <Badge variant="outline" className="text-[10px] text-primary border-primary/20">+{act.pointsEarned} Pts</Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10">
+                       <p className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-widest">No activities recorded yet.</p>
+                    </div>
+                  )}
+               </div>
+            </section>
           </div>
-          <div className="glass-card h-72 rounded-[2.5rem] flex items-center justify-center border-white/5 overflow-hidden group">
-             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-             <div className="text-center space-y-4 relative z-10">
-                <Globe className="h-10 w-10 text-muted-foreground/20 mx-auto animate-pulse" />
-                <p className="text-[11px] font-bold tracking-[0.2em] text-muted-foreground/40 uppercase">Global Hub: Establishing Connection...</p>
-             </div>
-          </div>
-        </section>
+        </>
+      )}
+    </div>
+  );
+}
 
-        <section className="space-y-6">
-          <div className="flex items-center gap-4 px-4">
-            <div className="w-3 h-3 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
-            <h2 className="text-[12px] font-bold tracking-[0.3em] uppercase text-white">Biometric Integrations</h2>
-            <div className="flex-1 h-px bg-white/5" />
-          </div>
-          <div className="glass-card h-72 rounded-[2.5rem] flex items-center justify-center border-white/5 overflow-hidden group">
-             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-             <div className="text-center space-y-4 relative z-10">
-                <Zap className="h-10 w-10 text-muted-foreground/20 mx-auto" />
-                <p className="text-[11px] font-bold tracking-[0.2em] text-muted-foreground/40 uppercase">No Active Wearables Paired</p>
-                <Badge variant="outline" className="border-white/10 text-muted-foreground/40 text-[9px] uppercase tracking-widest cursor-pointer hover:bg-white/5 transition-colors">
-                  Pair Device
-                </Badge>
-             </div>
-          </div>
-        </section>
+function HeroMetric({ label, value, subValue, color, isSmall }: any) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</p>
+      <div className="flex items-baseline gap-1">
+        <span className={cn("font-headline font-bold tracking-tighter", isSmall ? "text-xl" : "text-3xl md:text-4xl", color)}>
+          {value}
+        </span>
+        {subValue && <span className="text-[10px] font-bold text-muted-foreground/40 uppercase">{subValue}</span>}
       </div>
     </div>
   );
 }
 
-function Globe({ className }: { className?: string }) {
+function KPICard({ label, value, unit, icon: Icon, color }: any) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-      <path d="M2 12h20" />
-    </svg>
+    <div className="glass-card rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white/5 border-none">
+       <div className="space-y-1">
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{label}</p>
+          <div className="flex items-baseline gap-2">
+             <span className="text-2xl font-headline font-bold text-white">{value}</span>
+             <span className="text-[10px] font-bold text-muted-foreground/40 uppercase">{unit}</span>
+          </div>
+       </div>
+       <div className={cn("p-3 rounded-xl bg-white/5 transition-transform group-hover:scale-110", color)}>
+          <Icon className="h-6 w-6" />
+       </div>
+    </div>
+  );
+}
+
+function AchievementCard({ title, locked, icon: Icon }: any) {
+  return (
+    <div className={cn(
+      "p-4 rounded-2xl flex flex-col items-center justify-center space-y-3 transition-all",
+      locked ? "bg-white/5 opacity-40 grayscale" : "bg-primary/10 border border-primary/20"
+    )}>
+       <Icon className={cn("h-6 w-6", locked ? "text-muted-foreground" : "text-primary")} />
+       <p className="text-[9px] font-bold uppercase tracking-widest text-center">{title}</p>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card className="glass-card border-none rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500">
+      <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
+        <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+      </div>
+      <div className="space-y-4">
+        <h2 className="text-4xl font-headline font-bold text-white tracking-tight">Welcome to EcoPulse AI</h2>
+        <p className="text-muted-foreground max-w-xl mx-auto text-lg leading-relaxed">
+          Your environmental footprint is a blank canvas. Complete your first carbon calculation to start tracking your impact and unlock personalized strategies.
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
+        <Link href="/calculator">
+          <Button size="lg" className="h-14 px-10 bg-primary text-primary-foreground font-bold rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
+            Start First Audit
+          </Button>
+        </Link>
+        <Link href="/knowledge-hub">
+          <Button size="lg" variant="outline" className="h-14 px-10 border-white/10 text-white font-bold rounded-2xl hover:bg-white/5">
+            Explore Library
+          </Button>
+        </Link>
+      </div>
+    </Card>
   );
 }
