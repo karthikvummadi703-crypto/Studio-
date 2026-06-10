@@ -45,7 +45,7 @@
   }
 }
 
-/* Removed backdrop-blur for maximum GPU performance */
+/* Optimized solid cards for maximum GPU performance */
 .glass-card {
   @apply bg-white border border-zinc-100 shadow-sm transition-all duration-200;
 }
