@@ -19,6 +19,9 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { COLLECTIONS, APP_METADATA } from '@/lib/constants';
 
+/**
+ * Enhanced Login page with optimized auth handlers.
+ */
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -28,6 +31,9 @@ export default function LoginPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  /**
+   * Handles standard email/password authentication.
+   */
   const handleLogin = useCallback(async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!email || !password) return;
@@ -47,6 +53,9 @@ export default function LoginPage() {
     }
   }, [email, password, router, toast]);
 
+  /**
+   * Handles Google OAuth login with atomic profile synchronization.
+   */
   const handleGoogleLogin = useCallback(async (): Promise<void> => {
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
@@ -77,6 +86,9 @@ export default function LoginPage() {
     }
   }, [router, toast]);
 
+  /**
+   * Initializes anonymous session for the Demo Mode.
+   */
   const handleDemoMode = useCallback(async (): Promise<void> => {
     setDemoLoading(true);
     try {

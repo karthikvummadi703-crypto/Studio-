@@ -25,7 +25,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'EcoPulse AI | Premium Carbon Analytics',
+  title: 'EcoPulse AI | Premium Carbon Analytics' ,
   description: 'High-performance carbon footprint tracking and AI-driven sustainability strategies.',
   keywords: ['sustainability', 'carbon footprint', 'AI advisor', 'green points', 'eco-friendly'],
   authors: [{ name: 'EcoPulse AI Team' }],
