@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -9,11 +8,13 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { FloatingAIAdvisor } from '@/components/ai/floating-advisor';
+import { usePathname } from 'next/navigation';
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user } = useUser();
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -30,6 +31,13 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const userInitial = useMemo(() => {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
+
+  // Hide navigation on auth pages
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+
+  if (isAuthPage) {
+    return <main className="flex-1">{children}</main>;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden w-full">
