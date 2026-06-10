@@ -1,31 +1,16 @@
-
 "use client";
 
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   Leaf, 
-  Trophy, 
+  ArrowUp, 
   History, 
-  Sparkles, 
-  Target, 
   Zap, 
-  ChevronRight,
-  TrendingDown,
-  Layout
 } from 'lucide-react';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid 
-} from 'recharts';
-import Link from 'next/link';
-import { useUser, useDoc, useCollection, useFirestore } from '@/firebase';
-import { collection, query, limit, orderBy, doc, updateDoc, arrayUnion, increment, addDoc } from 'firebase/firestore';
-import { getNextChallenge } from '@/lib/challenges';
-import { LEVEL_CONFIG, getLevelFromPoints } from '@/lib/levels';
+import { useUser, useDoc, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -33,248 +18,146 @@ export default function Dashboard() {
 
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc(profileRef);
-  
-  const activitiesQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'activities'), orderBy('timestamp', 'desc'), limit(5));
-  }, [db, user]);
-  const { data: activities } = useCollection(activitiesQuery);
-
-  const recordsQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'calculator_records'), orderBy('timestamp', 'desc'), limit(1));
-  }, [db, user]);
-  const { data: latestRecords } = useCollection(recordsQuery);
-  const latestRecord = latestRecords?.[0];
-
-  const points = profile?.greenPoints || 0;
-  const level = getLevelFromPoints(points);
-  const currentLevelConfig = LEVEL_CONFIG[level];
-  
-  const levelProgress = useMemo(() => {
-    if (currentLevelConfig.max === Infinity) return 100;
-    return ((points - currentLevelConfig.min) / (currentLevelConfig.max - currentLevelConfig.min)) * 100;
-  }, [points, currentLevelConfig]);
-
-  const activeChallenge = useMemo(() => {
-    return getNextChallenge(profile?.completedChallenges || []);
-  }, [profile?.completedChallenges]);
-
-  const footprintData = useMemo(() => {
-    if (!latestRecord) return [
-      { name: 'Transport', value: 30, color: '#10b981' },
-      { name: 'Energy', value: 40, color: '#3b82f6' },
-      { name: 'Food', value: 20, color: '#f59e0b' },
-      { name: 'Lifestyle', value: 10, color: '#8b5cf6' },
-    ];
-    return [
-      { name: 'Transport', value: latestRecord.breakdown.transportation, color: '#10b981' },
-      { name: 'Energy', value: latestRecord.breakdown.homeEnergy, color: '#3b82f6' },
-      { name: 'Food', value: latestRecord.breakdown.food, color: '#f59e0b' },
-      { name: 'Lifestyle', value: latestRecord.breakdown.lifestyle, color: '#8b5cf6' },
-    ];
-  }, [latestRecord]);
-
-  const handleCompleteChallenge = async () => {
-    if (!profileRef || !activeChallenge || !user) return;
-    
-    updateDoc(profileRef, {
-      completedChallenges: arrayUnion(activeChallenge.id),
-      greenPoints: increment(activeChallenge.reward)
-    });
-
-    addDoc(collection(db, 'activities'), {
-      userId: user.uid,
-      type: 'challenge',
-      description: `Completed Challenge: ${activeChallenge.title}`,
-      pointsEarned: activeChallenge.reward,
-      timestamp: new Date().toISOString()
-    });
-  };
 
   return (
-    <div className="space-y-8 pb-10">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div>
-          <h1 className="text-4xl font-headline font-bold tracking-tight">
-            Welcome, {profile?.fullName?.split(' ')[0] || 'Eco-Explorer'}
-          </h1>
-          <p className="text-muted-foreground text-lg">Your journey to a net-zero future starts here.</p>
-        </div>
-        <div className="flex gap-3">
-          <div className="glass-card px-5 py-2.5 rounded-2xl flex items-center gap-3 border-primary/20">
-            <div className="p-1.5 bg-primary/20 rounded-lg">
-              <Trophy className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Level</p>
-              <p className="font-headline font-bold text-lg leading-none">{level}</p>
-            </div>
-          </div>
-          <div className="glass-card px-5 py-2.5 rounded-2xl flex items-center gap-3 border-accent/20">
-            <div className="p-1.5 bg-accent/20 rounded-lg">
-              <Sparkles className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Points</p>
-              <p className="font-headline font-bold text-lg leading-none text-accent">{points}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        {/* Footprint Summary */}
-        <Card className="lg:col-span-2 glass-card border-none overflow-hidden shadow-2xl shadow-primary/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="font-headline text-2xl">Carbon Footprint Summary</CardTitle>
-              <CardDescription>Visualizing your current impact audit</CardDescription>
-            </div>
-            {latestRecord && (
-              <Badge className="bg-primary/20 text-primary border-primary/20 px-4 py-1.5 text-lg font-mono">
-                {latestRecord.totalEmissions.toFixed(0)} kg CO2e
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Environmental Overview Banner */}
+      <section className="glass-card rounded-3xl p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/5 to-transparent" />
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-headline font-bold text-white tracking-tight">Environmental Overview</h1>
+              <Badge variant="outline" className="bg-primary/10 border-primary/40 text-primary text-[10px] font-bold tracking-widest uppercase px-2 py-0.5">
+                First Account Sync
               </Badge>
-            )}
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            <div className="flex flex-col md:flex-row h-full items-center">
-              <ResponsiveContainer width="100%" height="100%" className="md:w-3/5">
-                <PieChart>
-                  <Pie data={footprintData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={8} dataKey="value">
-                    {footprintData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#0c1110', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="w-full md:w-2/5 space-y-4 pr-4 pl-4 md:pl-0">
-                {footprintData.map(item => (
-                  <div key={item.name} className="group flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm font-medium">{item.name}</span>
-                    </div>
-                    <span className="text-sm font-mono text-muted-foreground tabular-nums">{item.value.toFixed(0)} kg</span>
-                  </div>
-                ))}
-                {!latestRecord && (
-                  <div className="pt-4">
-                    <Button asChild variant="outline" className="w-full border-primary/20 text-xs h-9">
-                      <Link href="/calculator">Start First Calculation</Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-muted-foreground/60 text-sm max-w-md">Pristine companion metrics synced with active global ecological standards.</p>
+          </div>
+          <div className="flex items-center gap-4">
+             <div className="text-right">
+                <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase mr-3">Environment State:</span>
+                <Badge className="bg-primary/20 text-primary border-none text-[10px] font-bold">EMPTY DB</Badge>
+             </div>
+             <div className="text-right">
+                <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase mr-3">Populated (Active)</span>
+             </div>
+          </div>
+        </div>
+      </section>
 
-        {/* Active Challenge */}
-        <Card className="glass-card border-none bg-primary/5 border border-primary/10 flex flex-col justify-between">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Active Challenge
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 flex-1">
-            {activeChallenge ? (
-              <div className="space-y-4">
-                <div className="p-5 rounded-2xl bg-background/60 border border-white/5 space-y-3 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Target className="h-12 w-12 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-lg leading-tight">{activeChallenge.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{activeChallenge.description}</p>
-                  <div className="pt-2">
-                    <Badge className="bg-accent/20 text-accent font-bold">+{activeChallenge.reward} Points</Badge>
-                  </div>
-                </div>
-                <Button className="w-full bg-primary text-primary-foreground h-11 shadow-lg shadow-primary/20" onClick={handleCompleteChallenge}>
-                  Complete & Claim Reward
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-12 space-y-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <Trophy className="h-8 w-8 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <p className="font-bold text-lg">Master Explorer!</p>
-                  <p className="text-sm text-muted-foreground px-6">You've mastered all current challenges. New ones arriving soon.</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardContent className="pt-0 pb-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-1">
-                <span>Next Level</span>
-                <span>{Math.round(levelProgress)}%</span>
-              </div>
-              <Progress value={levelProgress} className="h-2 bg-white/5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sustainability Score history */}
-        <Card className="lg:col-span-2 glass-card border-none shadow-2xl shadow-primary/5">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="font-headline text-2xl">Evolution of Impact</CardTitle>
-              <CardDescription>Visualizing your sustainability score trends</CardDescription>
-            </div>
-            <div className="flex gap-2">
-               <div className="p-2 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
-                  <TrendingDown className="h-4 w-4 text-primary" />
+      {/* Overview Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Carbon Score Card */}
+        <Card className="glass-card border-none rounded-2xl overflow-hidden relative group">
+          <div className="absolute top-4 right-4 flex flex-col items-end opacity-40">
+             <span className="text-[9px] font-bold tracking-widest uppercase">Score Index</span>
+             <Badge variant="outline" className="text-[8px] text-accent border-accent/20 px-1 py-0 h-4 uppercase">Not Calculated Yet</Badge>
+          </div>
+          <CardContent className="p-8 flex flex-col items-center justify-center space-y-6">
+            <div className="relative flex items-center justify-center">
+               <svg className="w-40 h-40 transform -rotate-90">
+                 <circle className="text-white/5" strokeWidth="8" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80" />
+                 <circle className="text-primary/10" strokeWidth="8" strokeDasharray="440" strokeDashoffset="440" strokeLinecap="round" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80" />
+               </svg>
+               <div className="absolute flex flex-col items-center">
+                 <Leaf className="h-8 w-8 text-primary/40" />
+                 <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase mt-2">Empty</span>
                </div>
             </div>
-          </CardHeader>
-          <CardContent className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[{ name: 'Jan', score: 45 }, { name: 'Feb', score: 52 }, { name: 'Mar', score: profile?.sustainabilityScore || 58 }]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 12 }} />
-                <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 12 }} />
-                <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ backgroundColor: '#0c1110', border: 'none', borderRadius: '12px' }} />
-                <Bar dataKey="score" fill="#10b981" radius={[10, 10, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="text-center space-y-1">
+              <p className="text-[10px] font-bold text-white tracking-[0.15em] uppercase">Carbon Score</p>
+              <p className="text-[10px] text-muted-foreground/40 leading-relaxed px-4">Log today's transport, diet, or waste to establish your first baseline rating.</p>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Activity Feed */}
-        <Card className="glass-card border-none">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" />
-              Activity Log
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 h-[280px] overflow-y-auto pr-2 custom-scrollbar">
-            {activities && activities.length > 0 ? (
-              activities.map((act: any) => (
-                <div key={act.id} className="flex gap-4 items-start p-3 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 group">
-                  <div className={cn(
-                    "mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ring-4",
-                    act.type === 'calculation' ? "bg-primary ring-primary/10" : "bg-accent ring-accent/10"
-                  )} />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-tight group-hover:text-primary transition-colors">{act.description}</p>
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
-                      {new Date(act.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • +{act.pointsEarned} pts
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-16 opacity-30 italic text-sm flex flex-col items-center gap-3">
-                <Layout className="h-10 w-10 text-muted-foreground" />
-                No recent activities.
-              </div>
-            )}
+        {/* CO2 Emissions Card */}
+        <Card className="glass-card border-none rounded-2xl overflow-hidden relative">
+          <div className="absolute top-4 right-4 flex flex-col items-end opacity-40">
+             <span className="text-[9px] font-bold tracking-widest uppercase">Analysis</span>
+             <Badge variant="outline" className="text-[8px] border-white/10 px-1 py-0 h-4 uppercase">No Data Available</Badge>
+          </div>
+          <CardContent className="p-8 flex flex-col h-full justify-between space-y-12">
+            <div className="flex items-center justify-center h-32 relative">
+               <div className="flex gap-2 items-end h-16 opacity-10">
+                  <div className="w-1.5 h-full bg-primary/20 rounded-full" />
+                  <div className="w-1.5 h-1/2 bg-primary/20 rounded-full" />
+                  <div className="w-1.5 h-3/4 bg-primary/20 rounded-full" />
+                  <div className="w-1.5 h-1/4 bg-primary/20 rounded-full" />
+               </div>
+               <div className="absolute w-full h-px bg-white/5 border-dashed" />
+            </div>
+            <div className="text-center space-y-4">
+              <p className="text-[10px] font-bold text-white tracking-[0.15em] uppercase">CO₂ Emissions</p>
+              <p className="text-xs text-muted-foreground/40 italic">No telemetry recorded for the current tracking cycle.</p>
+            </div>
           </CardContent>
         </Card>
+
+        {/* CO2 Saved Card */}
+        <Card className="glass-card border-none rounded-2xl overflow-hidden relative">
+          <div className="absolute top-4 right-4 flex flex-col items-end opacity-40">
+             <span className="text-[9px] font-bold tracking-widest uppercase">Track Overall</span>
+             <span className="text-[10px] font-bold text-primary">0 kg</span>
+          </div>
+          <CardContent className="p-8 flex flex-col items-center justify-center space-y-10">
+            <div className="w-24 h-24 rounded-full border border-white/5 flex flex-col items-center justify-center bg-gradient-to-b from-white/5 to-transparent">
+               <ArrowUp className="h-10 w-10 text-primary opacity-40" />
+               <span className="text-[8px] font-bold text-muted-foreground/40 uppercase mt-1 tracking-widest">0.0 kg logged</span>
+            </div>
+            <div className="text-center space-y-3">
+              <p className="text-[10px] font-bold text-white tracking-[0.15em] uppercase">CO₂ Saved</p>
+              <p className="text-[10px] text-muted-foreground/40 leading-relaxed">Carbon savings are measured when substituting activities like switches to electric of high renewables.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Green Points Card */}
+        <Card className="glass-card border-none rounded-2xl overflow-hidden relative bg-primary/5">
+          <div className="absolute top-4 right-4 flex flex-col items-end opacity-40">
+             <span className="text-[9px] font-bold tracking-widest uppercase">Awards</span>
+             <span className="text-[10px] font-bold text-primary">0</span>
+          </div>
+          <CardContent className="p-8 flex flex-col items-center justify-center space-y-8">
+            <div className="w-24 h-24 transform rotate-45 border border-primary/20 flex items-center justify-center bg-[#0c1413]">
+               <div className="transform -rotate-45 flex flex-col items-center">
+                  <span className="text-3xl font-headline font-bold text-primary emerald-glow">0</span>
+               </div>
+            </div>
+            <div className="text-center space-y-3">
+              <p className="text-[10px] font-bold text-white tracking-[0.15em] uppercase">Green Points</p>
+              <p className="text-[10px] text-muted-foreground/40 leading-relaxed px-2">Points are earned by completing positive sustainability milestones.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Secondary Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+        <section className="space-y-4">
+          <div className="flex items-center gap-4 px-2">
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <h2 className="text-[11px] font-bold tracking-[0.2em] uppercase text-white">Eco Community Hub</h2>
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-[9px] font-bold text-muted-foreground/20 tracking-widest">NETWORK</span>
+          </div>
+          <div className="glass-card h-64 rounded-3xl flex items-center justify-center">
+             <p className="text-[10px] font-bold tracking-widest text-muted-foreground/20 uppercase">Social Connectivity: Offline</p>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center gap-4 px-2">
+            <div className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+            <h2 className="text-[11px] font-bold tracking-[0.2em] uppercase text-white">Health & Wearables</h2>
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-[9px] font-bold text-muted-foreground/20 tracking-widest">INTEGRATIONS</span>
+          </div>
+          <div className="glass-card h-64 rounded-3xl flex items-center justify-center">
+             <p className="text-[10px] font-bold tracking-widest text-muted-foreground/20 uppercase">No Devices Paired</p>
+          </div>
+        </section>
       </div>
     </div>
   );
