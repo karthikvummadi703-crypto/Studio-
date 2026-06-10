@@ -14,7 +14,7 @@ const MessageSchema = z.object({
   text: z.string(),
 });
 
-const AIAdvisorChatInputSchema = z.object({
+export const AIAdvisorChatInputSchema = z.object({
   history: z.array(MessageSchema).describe('Recent chat history.'),
   userInput: z.string().describe('User input.'),
   userContext: z.object({
@@ -25,26 +25,27 @@ const AIAdvisorChatInputSchema = z.object({
   }).describe('User sustainability stats.'),
 });
 
-const AIAdvisorChatOutputSchema = z.object({
+export const AIAdvisorChatOutputSchema = z.object({
   responseText: z.string().describe('Short, actionable response.'),
   suggestedTitle: z.string().optional().describe('3-5 word title.'),
 });
 
-export async function aiAdvisorChat(input: z.infer<typeof AIAdvisorChatInputSchema>): Promise<z.infer<typeof AIAdvisorChatOutputSchema>> {
-  return aiAdvisorChatFlow(input);
-}
-
-const prompt = ai.definePrompt({
+// Prompt definition for both streaming and non-streaming use
+export const advisorPrompt = ai.definePrompt({
   name: 'aiAdvisorChatPrompt',
   input: { schema: AIAdvisorChatInputSchema },
   output: { schema: AIAdvisorChatOutputSchema },
   config: {
-    temperature: 0.4, // Lower temperature for faster, more predictable output
-    maxOutputTokens: 300, // Limit response length for speed
+    temperature: 0.3, // Lower temperature for maximum speed and precision
+    maxOutputTokens: 400,
   },
-  prompt: `You are EcoPulse AI. Respond instantly and concisely.
+  prompt: `You are EcoPulse AI, a high-speed sustainability expert. 
 
-Context: Score:{{userContext.score}}, Points:{{userContext.points}}, Level:{{userContext.level}}.
+User Context:
+- Score: {{userContext.score}}
+- Points: {{userContext.points}}
+- Level: {{userContext.level}}
+- Challenges: {{userContext.challengesCompleted}}
 
 History:
 {{#each history}}
@@ -53,17 +54,10 @@ History:
 
 User: {{{userInput}}}
 
-Instruction: Give a 2-sentence actionable tip. If first message, provide a short title.`,
+Instruction: Provide a concise, 2-sentence actionable tip. Be specific to their stats. If this is the start of a conversation, provide a suggestedTitle for the chat.`,
 });
 
-const aiAdvisorChatFlow = ai.defineFlow(
-  {
-    name: 'aiAdvisorChatFlow',
-    inputSchema: AIAdvisorChatInputSchema,
-    outputSchema: AIAdvisorChatOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-  }
-);
+export async function aiAdvisorChat(input: z.infer<typeof AIAdvisorChatInputSchema>): Promise<z.infer<typeof AIAdvisorChatOutputSchema>> {
+  const { output } = await advisorPrompt(input);
+  return output!;
+}

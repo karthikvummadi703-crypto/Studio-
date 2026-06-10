@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { 
   Sparkles, 
   Send, 
@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Zap,
   Leaf,
-  User as UserIcon
+  User as UserIcon,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { aiAdvisorChat } from '@/ai/flows/ai-advisor-chat';
 import { getLevelFromPoints } from '@/lib/levels';
 
 export default function AIAdvisorPage() {
@@ -32,7 +32,10 @@ export default function AIAdvisorPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
+  // Cached user context
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc<any>(profileRef);
 
@@ -55,11 +58,12 @@ export default function AIAdvisorPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, loading]);
+  }, [messages, loading, streamingText]);
 
   const handleNewChat = () => {
     setActiveChatId(null);
     setInput('');
+    setError(null);
   };
 
   const handleSend = async (customMsg?: string) => {
@@ -67,19 +71,24 @@ export default function AIAdvisorPage() {
     if (!text || !user || !db || loading) return;
 
     const startTime = performance.now();
-    console.log(`[AI Advisor] Request started at: ${new Date().toISOString()}`);
+    console.log(`[AI Advisor] Request started: ${new Date().toISOString()}`);
 
     setLoading(true);
     setInput('');
+    setStreamingText('');
+    setError(null);
 
-    // Optimistic UI update: local message display
+    // 1. Optimistic UI update
     const userMessage = { role: 'user', text, timestamp: new Date().toISOString() };
-    const currentMessages = [...messages, userMessage];
+    const historyForAI = messages.slice(-5).map((m: any) => ({
+      role: m.role as 'user' | 'ai',
+      text: m.text
+    }));
 
     try {
       let chatId = activeChatId;
 
-      // 1. Initial save/update (Optimistic UI handled by Firestore sync)
+      // 2. Initial Firestore update (non-blocking)
       if (!chatId) {
         const docRef = await addDoc(collection(db, 'ai_conversations'), {
           userId: user.uid,
@@ -91,48 +100,66 @@ export default function AIAdvisorPage() {
         setActiveChatId(chatId);
       } else {
         updateDoc(doc(db, 'ai_conversations', chatId), {
-          messages: currentMessages,
+          messages: [...messages, userMessage],
           updatedAt: serverTimestamp(),
         });
       }
 
-      // 2. AI Execution - Use pruned history (last 5 messages)
-      const historyForAI = currentMessages.slice(-5).map(m => ({
-        role: m.role as 'user' | 'ai',
-        text: m.text
-      }));
-
-      const responseStartTime = performance.now();
-      const result = await aiAdvisorChat({
-        history: historyForAI,
-        userInput: text,
-        userContext: {
-          points: profile?.greenPoints || 0,
-          score: profile?.sustainabilityScore || 0,
-          level: getLevelFromPoints(profile?.greenPoints || 0),
-          challengesCompleted: profile?.completedChallenges?.length || 0,
-        }
+      // 3. Streaming Request to Gemini Flash
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          history: historyForAI,
+          userInput: text,
+          userContext: {
+            points: profile?.greenPoints || 0,
+            score: profile?.sustainabilityScore || 0,
+            level: getLevelFromPoints(profile?.greenPoints || 0),
+            challengesCompleted: profile?.completedChallenges?.length || 0,
+          }
+        }),
       });
-      const responseEndTime = performance.now();
-      
-      console.log(`[AI Advisor] Token generation took: ${(responseEndTime - responseStartTime).toFixed(0)}ms`);
 
-      const aiMessage = { role: 'ai', text: result.responseText, timestamp: new Date().toISOString() };
+      if (!response.ok) throw new Error('Failed to reach Gemini Flash');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No stream available');
+
+      let fullAIResponse = '';
+      let firstTokenTime: number | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        if (!firstTokenTime) {
+          firstTokenTime = performance.now();
+          console.log(`[AI Advisor] First token received in: ${(firstTokenTime - startTime).toFixed(0)}ms`);
+        }
+
+        const chunk = new TextDecoder().decode(value);
+        fullAIResponse += chunk;
+        setStreamingText(fullAIResponse);
+      }
+
+      const totalLatency = performance.now() - startTime;
+      console.log(`[AI Advisor] Total Response Time: ${totalLatency.toFixed(0)}ms (Gemini Flash)`);
+
+      // 4. Final sync to Firestore
+      const aiMessage = { role: 'ai', text: fullAIResponse, timestamp: new Date().toISOString() };
       
-      // 3. Final update
       updateDoc(doc(db, 'ai_conversations', chatId), {
-        messages: [...currentMessages, aiMessage],
-        title: result.suggestedTitle || activeChat?.title || text.substring(0, 30),
+        messages: [...messages, userMessage, aiMessage],
         updatedAt: serverTimestamp(),
       });
-      
-      const totalLatency = performance.now() - startTime;
-      console.log(`[AI Advisor] Total Latency: ${totalLatency.toFixed(0)}ms`);
 
-    } catch (e) {
-      console.error('Advisor speed error:', e);
+    } catch (e: any) {
+      console.error('[Advisor Error]:', e);
+      setError(e.message || 'The AI is taking too long. Please try again.');
     } finally {
       setLoading(false);
+      setStreamingText('');
     }
   };
 
@@ -151,13 +178,16 @@ export default function AIAdvisorPage() {
           <div className="space-y-2">
             {!chats || chats.length === 0 ? (
               <div className="text-center py-10 opacity-40">
-                <p className="text-[9px] font-bold uppercase tracking-widest">Workspace Empty</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest">No Chats Found</p>
               </div>
             ) : (
-              chats.map((chat) => (
+              chats.map((chat: any) => (
                 <button
                   key={chat.id}
-                  onClick={() => setActiveChatId(chat.id)}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setError(null);
+                  }}
                   className={cn(
                     "w-full text-left p-4 rounded-2xl transition-all group flex items-start gap-3",
                     activeChatId === chat.id 
@@ -167,7 +197,7 @@ export default function AIAdvisorPage() {
                 >
                   <MessageSquare className={cn("h-4 w-4 mt-0.5 shrink-0", activeChatId === chat.id ? "text-primary-foreground" : "text-zinc-300 group-hover:text-primary")} />
                   <div className="overflow-hidden">
-                    <p className="text-[11px] font-bold truncate">{chat.title}</p>
+                    <p className="text-[11px] font-bold truncate">{chat.title || 'Conversation'}</p>
                     <p className={cn("text-[9px] uppercase tracking-tighter mt-0.5", activeChatId === chat.id ? "text-primary-foreground/60" : "text-zinc-400")}>
                       {chat.updatedAt?.toDate ? chat.updatedAt.toDate().toLocaleDateString() : 'Just now'}
                     </p>
@@ -187,33 +217,33 @@ export default function AIAdvisorPage() {
             </div>
             <div>
               <CardTitle className="text-lg font-headline font-bold">EcoPulse Advisor</CardTitle>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">High Speed Engine</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Gemini 1.5 Flash Enabled</p>
             </div>
           </div>
           <Badge variant="outline" className="border-primary/20 text-primary text-[9px] font-bold uppercase tracking-widest px-3 py-1">
-            Gemini Flash 1.5
+            Streaming Active
           </Badge>
         </CardHeader>
 
         <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 p-6 md:p-10">
-            {messages.length === 0 && !loading ? (
+            {messages.length === 0 && !loading && !streamingText ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-8 py-20">
                 <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center ring-8 ring-primary/5">
                   <Leaf className="h-10 w-10 text-primary animate-pulse" />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-2xl font-headline font-bold text-zinc-800">Environmental Workspace</h3>
+                  <h3 className="text-2xl font-headline font-bold text-zinc-800">Environmental Strategy</h3>
                   <p className="text-zinc-500 max-w-sm text-sm">
-                    Instant strategic insights for your footprint.
+                    Personalized advice based on your current score of <span className="text-primary font-bold">{profile?.sustainabilityScore || 0}</span>.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-xl">
                   {[
                     'Analyze My Carbon Footprint',
-                    'How can I earn more points?',
-                    'Suggest a reduction plan',
-                    'Recommend Next Challenge'
+                    'Suggest Ways To Reduce Emissions',
+                    'Recommend My Next Challenge',
+                    'Explain My Sustainability Score'
                   ].map(prompt => (
                     <Button 
                       key={prompt} 
@@ -229,7 +259,7 @@ export default function AIAdvisorPage() {
               </div>
             ) : (
               <div className="space-y-8 max-w-4xl mx-auto">
-                {messages.map((m, i) => (
+                {messages.map((m: any, i: number) => (
                   <div key={i} className={cn(
                     "flex gap-4 group animate-in fade-in slide-in-from-bottom-2",
                     m.role === 'user' ? "flex-row-reverse" : "flex-row"
@@ -250,15 +280,36 @@ export default function AIAdvisorPage() {
                     </div>
                   </div>
                 ))}
-                {loading && (
+                
+                {/* Streaming Chunk */}
+                {streamingText && (
+                  <div className="flex gap-4 flex-row animate-in fade-in">
+                    <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shrink-0">
+                      <Sparkles className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="p-6 rounded-[2rem] rounded-tl-none text-sm leading-relaxed max-w-[80%] shadow-sm border bg-primary/5 border-primary/10 text-foreground font-medium">
+                      {streamingText}
+                    </div>
+                  </div>
+                )}
+
+                {loading && !streamingText && (
                   <div className="flex gap-4 animate-pulse">
                     <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
+                      Thinking...
                     </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-[11px] font-bold uppercase tracking-widest">
+                    <AlertCircle className="h-4 w-4" />
+                    {error}
+                    <Button variant="ghost" className="ml-auto h-7 text-[10px] uppercase font-black" onClick={() => handleSend()}>Retry</Button>
                   </div>
                 )}
                 <div ref={scrollRef} />

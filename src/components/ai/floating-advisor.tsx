@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Loader2, Minimize2, Maximize2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { aiAdvisorChat } from '@/ai/flows/ai-advisor-chat';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getLevelFromPoints } from '@/lib/levels';
@@ -21,46 +20,71 @@ export function FloatingAIAdvisor() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc<any>(profileRef);
 
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
-    { role: 'ai', text: 'Hello! Ask me about your carbon footprint or sustainability level.' }
+    { role: 'ai', text: 'Hello! I am your Gemini-powered advisor. How can I help you reduce your footprint today?' }
   ]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, streamingText]);
 
   const handleSend = async (customMsg?: string) => {
     const text = (customMsg || input).trim();
     if (!text || isLoading) return;
     
     const startTime = performance.now();
-    console.log(`[Quick AI] Request started at: ${new Date().toISOString()}`);
-
     setMessages(prev => [...prev, { role: 'user', text }]);
     setInput('');
     setIsLoading(true);
+    setStreamingText('');
 
     try {
-      // Use pruned history for speed
-      const prunedHistory = messages.slice(-5).map(m => ({ role: m.role, text: m.text }));
+      const prunedHistory = messages.slice(-3).map(m => ({ role: m.role, text: m.text }));
 
-      const result = await aiAdvisorChat({
-        history: prunedHistory,
-        userInput: text,
-        userContext: {
-          points: profile?.greenPoints || 0,
-          score: profile?.sustainabilityScore || 0,
-          level: getLevelFromPoints(profile?.greenPoints || 0),
-          challengesCompleted: profile?.completedChallenges?.length || 0,
-        }
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          history: prunedHistory,
+          userInput: text,
+          userContext: {
+            points: profile?.greenPoints || 0,
+            score: profile?.sustainabilityScore || 0,
+            level: getLevelFromPoints(profile?.greenPoints || 0),
+            challengesCompleted: profile?.completedChallenges?.length || 0,
+          }
+        }),
       });
+
+      if (!response.ok) throw new Error('Stream failed');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader');
+
+      let fullResponse = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = new TextDecoder().decode(value);
+        fullResponse += chunk;
+        setStreamingText(fullResponse);
+      }
       
-      setMessages(prev => [...prev, { role: 'ai', text: result.responseText }]);
-      console.log(`[Quick AI] Latency: ${(performance.now() - startTime).toFixed(0)}ms`);
+      setMessages(prev => [...prev, { role: 'ai', text: fullResponse }]);
+      console.log(`[Quick AI] Latency: ${(performance.now() - startTime).toFixed(0)}ms (Gemini Flash)`);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'ai', text: 'I encountered a brief latency issue. Please try again.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: 'The AI is very busy. Please try again or visit the Full Advisor page.' }]);
     } finally {
       setIsLoading(false);
+      setStreamingText('');
     }
   };
 
@@ -73,24 +97,32 @@ export function FloatingAIAdvisor() {
            </div>
            <div>
               <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Quick Assistant</p>
-              <p className="text-[11px] font-bold text-muted-foreground">Ready to analyze. Click to chat.</p>
+              <p className="text-[11px] font-bold text-muted-foreground">Gemini Flash Active. Click to chat.</p>
            </div>
         </div>
 
         <div className="flex gap-4">
-           {['Analyze Impact', 'Reduce Emissions'].map(prompt => (
-              <Button 
-                key={prompt}
-                variant="outline" 
-                size="sm" 
-                className="hidden lg:flex h-9 px-4 border-zinc-200 bg-white text-zinc-500 text-[9px] font-bold uppercase tracking-widest hover:border-primary hover:text-primary transition-all rounded-full"
-                onClick={() => {
-                  setIsOpen(true);
-                  handleSend(prompt);
-                }}
-              >
-                {prompt}
-              </Button>
+           {['Analyze Impact', 'Open Full AI Advisor'].map(prompt => (
+             prompt === 'Open Full AI Advisor' ? (
+                <Link key={prompt} href="/ai-advisor" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" size="sm" className="h-9 px-4 border-primary text-primary text-[9px] font-bold uppercase tracking-widest hover:bg-primary/5 transition-all rounded-full">
+                    {prompt}
+                  </Button>
+                </Link>
+             ) : (
+                <Button 
+                  key={prompt}
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden lg:flex h-9 px-4 border-zinc-200 bg-white text-zinc-500 text-[9px] font-bold uppercase tracking-widest hover:border-primary hover:text-primary transition-all rounded-full"
+                  onClick={() => {
+                    setIsOpen(true);
+                    handleSend(prompt);
+                  }}
+                >
+                  {prompt}
+                </Button>
+             )
            ))}
         </div>
       </div>
@@ -109,7 +141,7 @@ export function FloatingAIAdvisor() {
               <div className="p-2 bg-primary rounded-xl shadow-md">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary">EcoPulse AI</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary">EcoPulse AI Quick</CardTitle>
             </div>
             <div className="flex items-center gap-1">
               <Link href="/ai-advisor" onClick={() => setIsOpen(false)}>
@@ -143,17 +175,25 @@ export function FloatingAIAdvisor() {
                     </div>
                   </div>
                 ))}
-                {isLoading && (
-                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-bold tracking-widest animate-pulse px-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating Fast Response...
+                {streamingText && (
+                  <div className="flex flex-col max-w-[90%] items-start animate-in fade-in">
+                    <div className="p-4 rounded-[1.5rem] rounded-tl-none text-xs leading-relaxed shadow-sm bg-zinc-50 border border-zinc-100 text-zinc-700">
+                      {streamingText}
+                    </div>
                   </div>
                 )}
+                {isLoading && !streamingText && (
+                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-bold tracking-widest animate-pulse px-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Gemini Flash Streaming...
+                  </div>
+                )}
+                <div ref={scrollRef} />
               </div>
             </ScrollArea>
             <div className="p-5 border-t border-zinc-100 bg-white flex gap-3">
               <Input 
-                placeholder="Ask something..." 
+                placeholder="Ask Gemini..." 
                 className="bg-zinc-50 border-transparent text-xs h-12 rounded-xl focus-visible:ring-primary/20"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
