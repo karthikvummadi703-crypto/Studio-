@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -21,7 +22,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-10">
       <div>
-        <h1 className="text-4xl font-headline font-bold">Profile</h1>
+        <h1 className="text-4xl font-headline font-bold text-foreground">Profile</h1>
         <p className="text-muted-foreground">Your sustainability footprint and milestones.</p>
       </div>
 
@@ -33,7 +34,7 @@ export default function ProfilePage() {
                  {profile.fullName?.[0]}
                </div>
                <div>
-                  <CardTitle className="font-headline text-2xl">{profile.fullName}</CardTitle>
+                  <CardTitle className="font-headline text-2xl text-foreground">{profile.fullName}</CardTitle>
                   <p className="text-muted-foreground text-sm flex items-center gap-1">
                     <Mail className="h-3 w-3" /> {profile.email}
                   </p>
@@ -52,17 +53,17 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <Separator className="bg-white/5" />
+            <Separator className="bg-black/5" />
             
             <div className="space-y-4">
-               <h3 className="font-headline font-bold text-lg flex items-center gap-2">
+               <h3 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
                  <CheckCircle2 className="h-5 w-5 text-primary" />
                  Completed Challenges
                </h3>
                <div className="flex flex-wrap gap-2">
                  {profile.completedChallenges && profile.completedChallenges.length > 0 ? (
                    profile.completedChallenges.map((id: string) => (
-                     <Badge key={id} variant="secondary" className="bg-white/5 border-white/10 px-3 py-1">
+                     <Badge key={id} variant="secondary" className="bg-black/5 border-black/10 px-3 py-1 text-muted-foreground">
                        {id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                      </Badge>
                    ))
@@ -77,7 +78,7 @@ export default function ProfilePage() {
         <div className="space-y-6">
           <Card className="glass-card border-none bg-primary/5 border border-primary/20">
              <CardHeader>
-                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                <CardTitle className="font-headline text-lg flex items-center gap-2 text-foreground">
                   <Trophy className="h-5 w-5 text-primary" />
                   Eco Level
                 </CardTitle>
@@ -97,7 +98,7 @@ export default function ProfilePage() {
                   <Calendar className="h-5 w-5 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold">Joined EcoPulse</p>
-                    <p className="font-headline font-bold">
+                    <p className="font-headline font-bold text-foreground">
                       {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
                     </p>
                   </div>

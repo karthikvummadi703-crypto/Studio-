@@ -78,7 +78,7 @@ export default function KnowledgeHubPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest">
             <Info className="h-3 w-3" /> Learning Center
           </div>
-          <h1 className="text-5xl font-headline font-bold">Knowledge Hub</h1>
+          <h1 className="text-5xl font-headline font-bold text-foreground">Knowledge Hub</h1>
           <p className="text-muted-foreground text-lg max-w-2xl">
             Expert guidance and personalized insights for your sustainability journey.
           </p>
@@ -86,7 +86,7 @@ export default function KnowledgeHubPage() {
       </header>
 
       <Tabs defaultValue="educational" className="w-full">
-        <TabsList className="bg-white/5 p-1.5 rounded-2xl h-auto mb-10 inline-flex border border-white/5">
+        <TabsList className="bg-black/5 p-1.5 rounded-2xl h-auto mb-10 inline-flex border border-black/5">
           <TabsTrigger value="educational" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
              <BookOpen className="mr-2 h-5 w-5" /> Educational Library
           </TabsTrigger>
@@ -98,7 +98,7 @@ export default function KnowledgeHubPage() {
         <TabsContent value="educational" className="animate-in fade-in duration-700">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {EDUCATIONAL_TOPICS.map((topic, i) => (
-              <Card key={i} className="glass-card border-none hover:bg-white/10 transition-all cursor-pointer group flex flex-col hover:-translate-y-1">
+              <Card key={i} className="glass-card border-none hover:bg-black/5 transition-all cursor-pointer group flex flex-col hover:-translate-y-1">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-primary/10 rounded-2xl group-hover:bg-primary/20 transition-colors">
@@ -106,8 +106,8 @@ export default function KnowledgeHubPage() {
                     </div>
                     <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary">{topic.readTime}</Badge>
                   </div>
-                  <Badge variant="secondary" className="w-fit text-[10px] uppercase mb-2 bg-white/5 border-white/10">{topic.category}</Badge>
-                  <CardTitle className="font-headline text-2xl group-hover:text-primary transition-colors">{topic.title}</CardTitle>
+                  <Badge variant="secondary" className="w-fit text-[10px] uppercase mb-2 bg-black/5 border-black/5 text-muted-foreground">{topic.category}</Badge>
+                  <CardTitle className="font-headline text-2xl group-hover:text-primary transition-colors text-foreground">{topic.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1">
                   <p className="text-muted-foreground leading-relaxed">{topic.desc}</p>
@@ -127,14 +127,14 @@ export default function KnowledgeHubPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="glass-card border-none bg-primary/5 border border-primary/10">
                 <CardHeader>
-                  <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                  <CardTitle className="font-headline text-2xl flex items-center gap-3 text-foreground">
                     <TrendingDown className="h-7 w-7 text-primary" />
                     Impact Breakdown
                   </CardTitle>
                   <CardDescription>Generated from your audit on {new Date(latestRecord.timestamp).toLocaleDateString()}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8 pt-4">
-                  <div className="p-6 rounded-3xl bg-background/40 border border-white/5 text-center">
+                  <div className="p-6 rounded-3xl bg-background/40 border border-black/5 text-center">
                     <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Footprint</p>
                     <p className="text-6xl font-headline font-bold text-primary">{latestRecord.totalEmissions.toFixed(1)} <span className="text-xl">kgCO2e</span></p>
                   </div>
@@ -142,10 +142,10 @@ export default function KnowledgeHubPage() {
                     {Object.entries(latestRecord.breakdown).map(([key, val]: [string, any]) => (
                       <div key={key} className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="capitalize font-bold text-sm tracking-wide">{key.replace('home', 'Home ')}</span>
+                          <span className="capitalize font-bold text-sm tracking-wide text-foreground">{key.replace('home', 'Home ')}</span>
                           <span className="font-mono text-primary font-bold">{((val / latestRecord.totalEmissions) * 100).toFixed(0)}%</span>
                         </div>
-                        <Progress value={(val / latestRecord.totalEmissions) * 100} className="h-2 bg-white/5" />
+                        <Progress value={(val / latestRecord.totalEmissions) * 100} className="h-2 bg-black/5" />
                       </div>
                     ))}
                   </div>
@@ -158,7 +158,7 @@ export default function KnowledgeHubPage() {
                     <Sparkles className="h-32 w-32 text-primary" />
                   </div>
                   <CardHeader>
-                    <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                    <CardTitle className="font-headline text-2xl flex items-center gap-3 text-foreground">
                       <Lightbulb className="h-7 w-7 text-primary" />
                       Strategic Insights
                     </CardTitle>
@@ -171,15 +171,15 @@ export default function KnowledgeHubPage() {
                       }
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="p-5 rounded-2xl bg-white/5 space-y-2">
+                       <div className="p-5 rounded-2xl bg-black/5 space-y-2">
                           <p className="text-xs font-bold uppercase tracking-widest text-primary">Top Action</p>
-                          <p className="font-bold">Renewable Switch</p>
-                          <Badge className="bg-primary/20 text-primary">High Impact</Badge>
+                          <p className="font-bold text-foreground">Renewable Switch</p>
+                          <Badge className="bg-primary/20 text-primary border-none">High Impact</Badge>
                        </div>
-                       <div className="p-5 rounded-2xl bg-white/5 space-y-2">
+                       <div className="p-5 rounded-2xl bg-black/5 space-y-2">
                           <p className="text-xs font-bold uppercase tracking-widest text-accent">Efficiency</p>
-                          <p className="font-bold">Smart Heating</p>
-                          <Badge className="bg-accent/20 text-accent">Med Impact</Badge>
+                          <p className="font-bold text-foreground">Smart Heating</p>
+                          <Badge className="bg-accent/20 text-accent border-none">Med Impact</Badge>
                        </div>
                     </div>
                   </CardContent>
@@ -187,11 +187,11 @@ export default function KnowledgeHubPage() {
                 
                 <Card className="glass-card border-none bg-secondary/20">
                    <CardHeader>
-                     <CardTitle className="font-headline text-xl">Future Projection</CardTitle>
+                     <CardTitle className="font-headline text-xl text-foreground">Future Projection</CardTitle>
                    </CardHeader>
                    <CardContent>
                       <p className="text-muted-foreground text-sm leading-relaxed">
-                        If you implement our top three recommendations, your sustainability score will likely increase to <span className="text-white font-bold">85/100</span> by next quarter.
+                        If you implement our top three recommendations, your sustainability score will likely increase to <span className="text-foreground font-bold">85/100</span> by next quarter.
                       </p>
                    </CardContent>
                 </Card>
@@ -200,11 +200,11 @@ export default function KnowledgeHubPage() {
           ) : (
             <Card className="glass-card border-none text-center py-24">
               <CardContent className="space-y-6">
-                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mx-auto">
                   <Sparkles className="h-10 w-10 text-muted-foreground opacity-30" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-headline font-bold">Insights Locked</h3>
+                  <h3 className="text-2xl font-headline font-bold text-foreground">Insights Locked</h3>
                   <p className="text-muted-foreground max-w-sm mx-auto">Complete your first impact audit to unlock hyper-personalized carbon analysis and reduction strategies.</p>
                 </div>
                 <Button asChild className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">

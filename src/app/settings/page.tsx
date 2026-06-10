@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,14 +24,14 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <header>
-        <h1 className="text-4xl font-headline font-bold">Settings</h1>
+        <h1 className="text-4xl font-headline font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground">Manage your account and platform preferences.</p>
       </header>
 
       <div className="grid gap-6">
         <Card className="glass-card border-none">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
+            <CardTitle className="font-headline flex items-center gap-2 text-foreground">
               <Bell className="h-5 w-5 text-primary" />
               Notifications
             </CardTitle>
@@ -39,15 +40,15 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Weekly Summary</Label>
+                <Label className="text-foreground">Weekly Summary</Label>
                 <p className="text-xs text-muted-foreground">Receive a performance report every Monday.</p>
               </div>
               <Switch defaultChecked />
             </div>
-            <Separator className="bg-white/5" />
+            <Separator className="bg-black/5" />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Challenge Alerts</Label>
+                <Label className="text-foreground">Challenge Alerts</Label>
                 <p className="text-xs text-muted-foreground">Be notified when new sustainability challenges are available.</p>
               </div>
               <Switch defaultChecked />
@@ -57,7 +58,7 @@ export default function SettingsPage() {
 
         <Card className="glass-card border-none">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
+            <CardTitle className="font-headline flex items-center gap-2 text-foreground">
               <Shield className="h-5 w-5 text-primary" />
               Privacy
             </CardTitle>
@@ -66,7 +67,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Public Profile</Label>
+                <Label className="text-foreground">Public Profile</Label>
                 <p className="text-xs text-muted-foreground">Allow others to see your Green Points and level.</p>
               </div>
               <Switch />
