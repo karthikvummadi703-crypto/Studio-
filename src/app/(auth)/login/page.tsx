@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -30,12 +31,18 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    
+    console.log('[Login] Attempting sign-in for:', email);
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log('[Login] Auth success. UID:', cred.user.uid);
+      
+      console.log('[Login] Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (error: any) {
+      console.error('[Login] Error:', error);
       toast({
         variant: "destructive",
         title: "Login Failed",
@@ -47,16 +54,19 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    console.log('[Login] Starting Google Sign-In...');
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      console.log('[Login] Google success. UID:', user.uid);
 
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
 
       if (!userDoc.exists()) {
+        console.log('[Login] Initializing new Google profile...');
         await setDoc(userRef, {
           fullName: user.displayName || 'Eco Warrior',
           email: user.email || '',
@@ -68,8 +78,10 @@ export default function LoginPage() {
         });
       }
       
+      console.log('[Login] Redirecting...');
       router.push('/dashboard');
     } catch (error: any) {
+      console.error('[Login] Google Error:', error);
       toast({
         variant: "destructive",
         title: "Google Login Failed",
@@ -81,16 +93,18 @@ export default function LoginPage() {
   };
 
   const handleDemoMode = async () => {
+    console.log('[Login] Starting Demo Mode...');
     setDemoLoading(true);
     try {
       const cred = await signInAnonymously(auth);
       const user = cred.user;
+      console.log('[Login] Anonymous Auth success. UID:', user.uid);
 
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
 
       if (!userDoc.exists()) {
-        // Seed Demo Profile
+        console.log('[Login] Seeding demo profile data...');
         await setDoc(userRef, {
           fullName: 'Eco Explorer (Demo)',
           email: 'demo@ecopulse.ai',
@@ -101,25 +115,11 @@ export default function LoginPage() {
           completedChallenges: ['challenge-1']
         });
 
-        // Seed some Demo Activity
         await addDoc(collection(db, 'activities'), {
           userId: user.uid,
           type: 'milestone',
           description: 'Joined the EcoPulse network',
           pointsEarned: 50,
-          timestamp: new Date().toISOString()
-        });
-
-        // Seed a Sample Calculation
-        await addDoc(collection(db, 'calculator_records'), {
-          userId: user.uid,
-          start: 'Central Park',
-          destination: 'Times Square',
-          mode: 'metro',
-          distance: 4.2,
-          co2: 0.08,
-          impact: 'Low',
-          points: 12,
           timestamp: new Date().toISOString()
         });
       }
@@ -128,8 +128,10 @@ export default function LoginPage() {
         title: "Demo Mode Active",
         description: "Explore EcoPulse with pre-populated telemetry.",
       });
+      console.log('[Login] Demo Redirecting...');
       router.push('/dashboard');
     } catch (error: any) {
+      console.error('[Login] Demo Error:', error);
       toast({
         variant: "destructive",
         title: "Demo Access Failed",
@@ -142,7 +144,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-2xl border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
+      <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardHeader className="p-10 text-center space-y-4">
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-primary/5">
             <Leaf className="h-8 w-8 text-primary" />

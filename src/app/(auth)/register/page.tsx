@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -24,15 +25,22 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password) return;
+    
+    console.log('[Register] Starting registration for:', email);
     setLoading(true);
 
     try {
+      // 1. Create User in Firebase Auth
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const user = cred.user;
+      console.log('[Register] Firebase Auth User created. UID:', user.uid);
 
+      // 2. Update Profile Name
       await updateProfile(user, { displayName: fullName });
+      console.log('[Register] User Profile updated with name:', fullName);
 
-      // Initialize Profile in Firestore
+      // 3. Initialize Firestore Profile
+      console.log('[Register] Starting Firestore profile creation for UID:', user.uid);
       await setDoc(doc(db, 'users', user.uid), {
         fullName,
         email,
@@ -42,8 +50,10 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString(),
         completedChallenges: []
       });
+      console.log('[Register] Firestore user document created successfully.');
 
-      // Log initialization activity
+      // 4. Log Initialization Activity
+      console.log('[Register] Logging initial activity...');
       await addDoc(collection(db, 'activities'), {
         userId: user.uid,
         type: 'initialization',
@@ -51,19 +61,27 @@ export default function RegisterPage() {
         pointsEarned: 0,
         timestamp: new Date().toISOString()
       });
+      console.log('[Register] Initialization activity logged.');
 
       toast({
         title: "Node Registered",
-        description: "Welcome to EcoPulse AI! Your journey begins now.",
+        description: "Welcome to EcoPulse AI! Redirecting to dashboard...",
       });
+
+      // 5. Redirection
+      console.log('[Register] Initiating redirect to /dashboard...');
       router.push('/dashboard');
+      console.log('[Register] Router push called.');
+
     } catch (error: any) {
+      console.error('[Register] Error during registration flow:', error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred during initialization.",
       });
     } finally {
+      console.log('[Register] Registration flow ended. Stopping loading spinner.');
       setLoading(false);
     }
   };

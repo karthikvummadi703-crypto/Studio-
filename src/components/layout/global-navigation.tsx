@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -19,6 +20,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+    console.log('[GlobalNav] Component Mounted');
   }, []);
 
   const isAuthPage = useMemo(() => {
@@ -26,8 +28,14 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (mounted && !isLoading && !user && !isAuthPage) {
-      router.push('/login');
+    if (mounted && !isLoading) {
+      if (!user && !isAuthPage) {
+        console.log('[GlobalNav] Unauthorized access detected, redirecting to login...');
+        router.push('/login');
+      } else if (user && isAuthPage) {
+        console.log('[GlobalNav] User logged in, redirecting to dashboard...');
+        router.push('/dashboard');
+      }
     }
   }, [mounted, isLoading, user, isAuthPage, router]);
 
@@ -43,13 +51,13 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // STABLE SHELL: We ensure the outer div structure is identical on Server and Client.
+  // STABLE SHELL: Ensure identical structure on Server and Client to prevent Hydration Errors.
   // We use bg-transparent to allow the layout background image to show through.
   const showNav = mounted && !isAuthPage && user;
 
   return (
     <div className="flex h-screen overflow-hidden w-full bg-transparent">
-      {/* Sidebar - Positioned fixed/relative but in a stable container */}
+      {/* Sidebar - Positioned fixed/relative in a stable container */}
       {showNav && (
         <nav 
           className={cn(
@@ -61,10 +69,10 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         </nav>
       )}
 
-      {/* Main Content Area - Stable container with fixed classes */}
+      {/* Main Content Area - Stable container shell */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {showNav && (
-          <header className="h-16 border-b border-black/5 bg-white/20 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
+          <header className="h-16 border-b border-black/5 bg-white/40 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleSidebar}
@@ -104,7 +112,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-transparent">
           <div className={cn(
             "max-w-7xl mx-auto p-4 sm:p-8 pb-24 relative z-10",
-            showNav && "bg-white/5 backdrop-blur-[1px] min-h-full"
+            showNav && "bg-white/10 backdrop-blur-sm min-h-full"
           )}>
             {children}
           </div>

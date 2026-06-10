@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
@@ -23,8 +24,9 @@ try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  console.log('[Firebase] Initialized successfully with Project ID:', firebaseConfig.projectId);
 } catch (error) {
-  console.error("Firebase initialization failed:", error);
+  console.error("[Firebase] Initialization failed:", error);
   throw error;
 }
 
