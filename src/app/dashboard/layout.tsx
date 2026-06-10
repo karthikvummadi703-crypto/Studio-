@@ -13,8 +13,8 @@ export default function DashboardLayout({
 }) {
   const { isLoading } = useUser();
 
-  // Authentication gate is temporarily removed for design purposes.
-  // We'll restore redirection to /login in the final phase.
+  // Auth gate completely removed for design phase.
+  // All pages are accessible to guests to review layout and interactions.
 
   if (isLoading) {
     return (

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -15,23 +16,26 @@ import {
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { collection, doc, updateDoc, increment, addDoc } from 'firebase/firestore';
 import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const steps = [
-  { id: 'transport', title: 'Transportation', icon: Car },
-  { id: 'energy', title: 'Home Energy', icon: Home },
-  { id: 'food', title: 'Food', icon: Utensils },
-  { id: 'lifestyle', title: 'Lifestyle', icon: ShoppingBag },
-  { id: 'results', title: 'Results', icon: CheckCircle2 },
+  { id: 'transport', title: 'Transportation', icon: Car, description: 'How do you get around each week?' },
+  { id: 'energy', title: 'Home Energy', icon: Home, description: 'Estimate your monthly energy usage.' },
+  { id: 'food', title: 'Food & Diet', icon: Utensils, description: 'What does your daily diet look like?' },
+  { id: 'lifestyle', title: 'Lifestyle & Waste', icon: ShoppingBag, description: 'Your consumption and waste habits.' },
+  { id: 'results', title: 'Impact Results', icon: CheckCircle2, description: 'Your personalized carbon analysis.' },
 ];
 
 export default function CalculatorPage() {
   const { user } = useUser();
   const db = useFirestore();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -48,7 +52,6 @@ export default function CalculatorPage() {
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
 
   const handleCalculate = async () => {
-    if (!user || !db) return;
     setLoading(true);
 
     // Simplified carbon calculation logic (kgCO2e)
@@ -58,121 +61,134 @@ export default function CalculatorPage() {
     const lifestyleImpact = (lifestyle.shopping === 'heavy' ? 100 : 50) + (lifestyle.waste === 'high' ? 50 : 20);
 
     const totalEmissions = transportTotal + energyTotal + foodImpact + lifestyleImpact;
-    
-    // Logic: Submit calculation and earn points
     const pointsEarned = 50; 
     const newScore = Math.max(10, Math.min(100, 100 - (totalEmissions / 50)));
 
-    try {
-      // 1. Save record
-      addDoc(collection(db, 'calculator_records'), {
-        userId: user.uid,
-        totalEmissions,
-        breakdown: {
-          transportation: transportTotal,
-          homeEnergy: energyTotal,
-          food: foodImpact,
-          lifestyle: lifestyleImpact
-        },
-        timestamp: new Date().toISOString()
-      });
+    if (user && db) {
+      try {
+        addDoc(collection(db, 'calculator_records'), {
+          userId: user.uid,
+          totalEmissions,
+          breakdown: {
+            transportation: transportTotal,
+            homeEnergy: energyTotal,
+            food: foodImpact,
+            lifestyle: lifestyleImpact
+          },
+          timestamp: new Date().toISOString()
+        });
 
-      // 2. Update profile
-      updateDoc(doc(db, 'users', user.uid), {
-        greenPoints: increment(pointsEarned),
-        sustainabilityScore: newScore,
-      });
+        updateDoc(doc(db, 'users', user.uid), {
+          greenPoints: increment(pointsEarned),
+          sustainabilityScore: newScore,
+        });
 
-      // 3. Log activity
-      addDoc(collection(db, 'activities'), {
-        userId: user.uid,
-        type: 'calculation',
-        description: `Submitted footprint calculation: ${totalEmissions.toFixed(0)} kgCO2e`,
-        pointsEarned,
-        timestamp: new Date().toISOString()
-      });
+        addDoc(collection(db, 'activities'), {
+          userId: user.uid,
+          type: 'calculation',
+          description: `Completed Impact Audit: ${totalEmissions.toFixed(0)} kgCO2e`,
+          pointsEarned,
+          timestamp: new Date().toISOString()
+        });
 
-      nextStep();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+        toast({
+          title: "Calculation Saved!",
+          description: `You've earned ${pointsEarned} Green Points.`,
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }
+
+    // In demo mode, we just proceed to results even if user is null
+    setTimeout(() => {
+      setLoading(false);
+      nextStep();
+    }, 1000);
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      <div className="mb-8 space-y-4 text-center">
-        <h1 className="text-4xl font-headline font-bold">Eco Calculator</h1>
-        <p className="text-muted-foreground">Analyze your impact to receive personalized reduction advice.</p>
-        <div className="max-w-md mx-auto">
-          <Progress value={progress} className="h-2 bg-white/5" />
-          <div className="flex justify-between mt-2 text-xs text-muted-foreground font-mono">
-             <span>STEP {currentStep + 1} OF 5</span>
-             <span>{Math.round(progress)}% COMPLETE</span>
-          </div>
+    <div className="max-w-4xl mx-auto py-12 px-4 space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-4 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest mb-2">
+          <Sparkles className="h-3 w-3" /> Step {currentStep + 1} of 5
+        </div>
+        <h1 className="text-5xl font-headline font-bold">Impact Audit</h1>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          {steps[currentStep].description}
+        </p>
+        <div className="max-w-md mx-auto pt-4">
+          <Progress value={progress} className="h-1.5 bg-white/5" />
         </div>
       </div>
 
-      <Card className="glass-card border-none overflow-hidden">
-        <CardHeader className="bg-primary/5 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/20 rounded-lg">
+      <Card className="glass-card border-none overflow-hidden shadow-2xl">
+        <CardHeader className="bg-primary/5 border-b border-white/5 py-8 px-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/20 rounded-2xl ring-4 ring-primary/5">
               {(() => {
                 const Icon = steps[currentStep].icon;
-                return <Icon className="h-6 w-6 text-primary" />;
+                return <Icon className="h-7 w-7 text-primary" />;
               })()}
             </div>
             <div>
-              <CardTitle className="font-headline">{steps[currentStep].title}</CardTitle>
-              <CardDescription>Enter your habits to build your profile.</CardDescription>
+              <CardTitle className="font-headline text-2xl">{steps[currentStep].title}</CardTitle>
+              <CardDescription className="text-base">Provide accurate estimates for a better analysis.</CardDescription>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-8">
+        <CardContent className="p-10 min-h-[400px]">
           {currentStep === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Car (km/week)</Label>
-                <Input type="number" value={transport.car} onChange={e => setTransport({...transport, car: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Car (km/week)</Label>
+                <Input type="number" value={transport.car} onChange={e => setTransport({...transport, car: Number(e.target.value)})} className="bg-white/5 border-white/10 h-12 text-lg" />
               </div>
-              <div className="space-y-2">
-                <Label>Bus (km/week)</Label>
-                <Input type="number" value={transport.bus} onChange={e => setTransport({...transport, bus: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bus / Coach (km/week)</Label>
+                <Input type="number" value={transport.bus} onChange={e => setTransport({...transport, bus: Number(e.target.value)})} className="bg-white/5 border-white/10 h-12 text-lg" />
               </div>
-              <div className="space-y-2">
-                <Label>Train (km/week)</Label>
-                <Input type="number" value={transport.train} onChange={e => setTransport({...transport, train: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Train / Subway (km/week)</Label>
+                <Input type="number" value={transport.train} onChange={e => setTransport({...transport, train: Number(e.target.value)})} className="bg-white/5 border-white/10 h-12 text-lg" />
               </div>
-              <div className="space-y-2">
-                <Label>Bike/Walking (km/week)</Label>
-                <Input type="number" value={transport.bike} onChange={e => setTransport({...transport, bike: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bicycle / Walking (km/week)</Label>
+                <Input type="number" value={transport.bike} onChange={e => setTransport({...transport, bike: Number(e.target.value)})} className="bg-white/5 border-white/10 h-12 text-lg" />
               </div>
             </div>
           )}
 
           {currentStep === 1 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label>Electricity usage (kWh/month)</Label>
-                <Input type="number" value={energy.electricity} onChange={e => setEnergy({...energy, electricity: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+            <div className="space-y-8 max-w-xl mx-auto">
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Electricity usage (kWh/month)</Label>
+                <Input type="number" value={energy.electricity} onChange={e => setEnergy({...energy, electricity: Number(e.target.value)})} className="bg-white/5 border-white/10 h-14 text-xl" />
+                <p className="text-xs text-muted-foreground">Average household: 250-400 kWh</p>
               </div>
-              <div className="space-y-2">
-                <Label>Gas usage (m³/month)</Label>
-                <Input type="number" value={energy.gas} onChange={e => setEnergy({...energy, gas: Number(e.target.value)})} className="bg-white/5 border-white/10" />
+              <div className="space-y-3">
+                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Gas usage (m³/month)</Label>
+                <Input type="number" value={energy.gas} onChange={e => setEnergy({...energy, gas: Number(e.target.value)})} className="bg-white/5 border-white/10 h-14 text-xl" />
               </div>
             </div>
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-6">
-              <Label className="text-lg">Select your primary diet</Label>
+            <div className="space-y-8 max-w-xl mx-auto">
+              <Label className="text-xl font-bold text-center block">Select your primary diet profile</Label>
               <RadioGroup value={food} onValueChange={setFood} className="grid grid-cols-1 gap-4">
-                {['vegetarian', 'mixed', 'meat'].map(f => (
-                  <div key={f} className="flex items-center space-x-2 p-4 rounded-xl border border-white/10 hover:bg-primary/5 cursor-pointer transition-colors capitalize">
-                    <RadioGroupItem value={f} id={f} />
-                    <Label htmlFor={f} className="flex-1 cursor-pointer font-bold">{f} Diet</Label>
+                {[
+                  { id: 'vegetarian', label: 'Plant-Focused', desc: 'Vegetarian or Vegan lifestyle' },
+                  { id: 'mixed', label: 'Balanced', desc: 'Moderate meat and plant consumption' },
+                  { id: 'meat', label: 'Meat-Forward', desc: 'Daily meat consumption' },
+                ].map(f => (
+                  <div key={f.id} className="relative">
+                    <RadioGroupItem value={f.id} id={f.id} className="peer sr-only" />
+                    <Label htmlFor={f.id} className="flex flex-col p-6 rounded-2xl border-2 border-white/5 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-white/5">
+                      <span className="font-bold text-lg mb-1">{f.label}</span>
+                      <span className="text-sm text-muted-foreground">{f.desc}</span>
+                    </Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -180,25 +196,29 @@ export default function CalculatorPage() {
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-8">
-               <div className="space-y-4">
-                <Label className="text-lg">Shopping Frequency</Label>
-                <RadioGroup value={lifestyle.shopping} onValueChange={val => setLifestyle({...lifestyle, shopping: val})} className="grid grid-cols-3 gap-2">
+            <div className="space-y-12 max-w-xl mx-auto">
+               <div className="space-y-6">
+                <Label className="text-lg font-bold">Shopping Frequency</Label>
+                <RadioGroup value={lifestyle.shopping} onValueChange={val => setLifestyle({...lifestyle, shopping: val})} className="grid grid-cols-3 gap-3">
                    {['minimal', 'medium', 'heavy'].map(opt => (
-                     <div key={opt} className="flex items-center space-x-2">
-                       <RadioGroupItem value={opt} id={opt} />
-                       <Label htmlFor={opt} className="capitalize">{opt}</Label>
+                     <div key={opt}>
+                       <RadioGroupItem value={opt} id={`shop-${opt}`} className="peer sr-only" />
+                       <Label htmlFor={`shop-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-white/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all">
+                         {opt}
+                       </Label>
                      </div>
                    ))}
                 </RadioGroup>
                </div>
-               <div className="space-y-4">
-                <Label className="text-lg">Waste Production</Label>
-                <RadioGroup value={lifestyle.waste} onValueChange={val => setLifestyle({...lifestyle, waste: val})} className="grid grid-cols-3 gap-2">
+               <div className="space-y-6">
+                <Label className="text-lg font-bold">Waste Production</Label>
+                <RadioGroup value={lifestyle.waste} onValueChange={val => setLifestyle({...lifestyle, waste: val})} className="grid grid-cols-3 gap-3">
                    {['low', 'medium', 'high'].map(opt => (
-                     <div key={opt} className="flex items-center space-x-2">
-                       <RadioGroupItem value={opt} id={`waste-${opt}`} />
-                       <Label htmlFor={`waste-${opt}`} className="capitalize">{opt}</Label>
+                     <div key={opt}>
+                       <RadioGroupItem value={opt} id={`waste-${opt}`} className="peer sr-only" />
+                       <Label htmlFor={`waste-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-white/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all">
+                         {opt}
+                       </Label>
                      </div>
                    ))}
                 </RadioGroup>
@@ -207,29 +227,44 @@ export default function CalculatorPage() {
           )}
 
           {currentStep === 4 && (
-            <div className="text-center space-y-6 py-10">
-               <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="h-10 w-10 text-primary" />
+            <div className="text-center space-y-8 py-12 animate-in zoom-in duration-500">
+               <div className="w-24 h-24 bg-primary/20 rounded-3xl flex items-center justify-center mx-auto mb-6 ring-8 ring-primary/5">
+                  <CheckCircle2 className="h-12 w-12 text-primary" />
                </div>
-               <h2 className="text-2xl font-headline font-bold">Analysis Complete!</h2>
-               <p className="text-muted-foreground">You earned <span className="text-primary font-bold">50 Green Points</span>! Your dashboard has been updated with personalized insights.</p>
-               <Button onClick={() => router.push('/dashboard')} className="bg-primary text-primary-foreground h-12 px-8">Back to Dashboard</Button>
+               <div className="space-y-2">
+                 <h2 className="text-4xl font-headline font-bold">Audit Complete</h2>
+                 <p className="text-muted-foreground text-lg">Your data has been processed using our sustainability engine.</p>
+               </div>
+               <div className="flex items-center justify-center gap-6 py-4">
+                  <div className="text-center">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Earned</p>
+                    <p className="text-3xl font-headline font-bold text-primary">+50 pts</p>
+                  </div>
+                  <div className="h-10 w-px bg-white/10" />
+                  <div className="text-center">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                    <p className="text-3xl font-headline font-bold text-white">Verified</p>
+                  </div>
+               </div>
+               <Button onClick={() => router.push('/dashboard')} className="bg-primary text-primary-foreground h-14 px-12 text-lg font-bold shadow-lg shadow-primary/20 rounded-2xl">
+                 Return to Dashboard
+               </Button>
             </div>
           )}
         </CardContent>
 
         {currentStep < 4 && (
-          <CardFooter className="flex justify-between border-t border-white/5 p-6 bg-primary/5">
-            <Button variant="ghost" onClick={prevStep} disabled={currentStep === 0 || loading}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+          <CardFooter className="flex justify-between border-t border-white/5 p-8 bg-background/40">
+            <Button variant="ghost" onClick={prevStep} disabled={currentStep === 0 || loading} className="h-12 px-6 rounded-xl">
+              <ArrowLeft className="mr-2 h-5 w-5" /> Previous
             </Button>
             {currentStep === 3 ? (
-              <Button onClick={handleCalculate} disabled={loading} className="bg-primary text-primary-foreground px-8">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Calculate Results'}
+              <Button onClick={handleCalculate} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
+                {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Finalize Audit'}
               </Button>
             ) : (
-              <Button onClick={nextStep} disabled={loading} className="bg-primary text-primary-foreground px-8">
-                Next <ArrowRight className="ml-2 h-4 w-4" />
+              <Button onClick={nextStep} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
+                Continue <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             )}
           </CardFooter>

@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Sparkles, X, Send, Loader2, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
-import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 export function FloatingAIAdvisor() {
@@ -19,11 +19,8 @@ export function FloatingAIAdvisor() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
-    { role: 'ai', text: 'Hello! I am your EcoPulse Advisor. I can analyze your calculator history and suggest ways to reduce your footprint. What would you like to know?' }
+    { role: 'ai', text: 'Hello! I am your EcoPulse Advisor. I can analyze your sustainability habits and suggest ways to reduce your footprint. What would you like to know?' }
   ]);
-
-  const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
-  const { data: profile } = useDoc(profileRef);
 
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
@@ -40,29 +37,20 @@ export function FloatingAIAdvisor() {
     setInput('');
     setIsLoading(true);
 
-    // Simulate contextual intelligence
+    // Simulate contextual intelligence for demo purposes
     setTimeout(() => {
-      let response = "Based on your data, ";
+      let response = "That's a great question. ";
       if (!latestRecord) {
-        response = "I see you haven't completed a calculation yet. Once you do, I can give you specific advice about your transportation and energy usage.";
+        response += "Once you complete your first carbon calculation, I can give you hyper-personalized advice. Generally, switching to LED bulbs and reducing beef consumption are the fastest ways to lower your footprint by up to 15%.";
       } else {
         const highest = Object.entries(latestRecord.breakdown).reduce((a, b) => (a[1] as number) > (b[1] as number) ? a : b);
-        response += `your highest impact category is ${highest[0]}. `;
-        if (highest[0] === 'transportation') {
-          response += "Reducing car trips by just 10% could boost your sustainability score by 5 points!";
-        } else if (highest[0] === 'homeEnergy') {
-          response += "Switching to LED bulbs is an easy way to lower your energy footprint immediately.";
-        } else {
-          response += "Small changes in your daily routine can make a big difference over a year.";
-        }
+        response += `Based on your recent data, your ${highest[0]} usage is the most significant factor. By optimizing this area, you could potentially reach 'Eco Warrior' level within the next 3 weeks.`;
       }
 
       setMessages(prev => [...prev, { role: 'ai', text: response }]);
       setIsLoading(false);
     }, 1500);
   };
-
-  if (!user) return null;
 
   return (
     <div className={cn(
@@ -97,7 +85,7 @@ export function FloatingAIAdvisor() {
                     m.role === 'user' ? "ml-auto items-end" : "items-start"
                   )}>
                     <div className={cn(
-                      "p-3 rounded-2xl text-xs leading-relaxed",
+                      "p-3 rounded-2xl text-xs leading-relaxed shadow-sm",
                       m.role === 'user' 
                         ? "bg-primary text-primary-foreground rounded-tr-none" 
                         : "bg-white/5 border border-white/10 rounded-tl-none"
@@ -107,17 +95,17 @@ export function FloatingAIAdvisor() {
                   </div>
                 ))}
                 {isLoading && (
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest animate-pulse">
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest animate-pulse px-2">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    Consulting Gemini...
+                    Analyzing footprint...
                   </div>
                 )}
               </div>
             </ScrollArea>
             <div className="p-3 border-t border-white/5 bg-background/50 flex gap-2">
               <Input 
-                placeholder="Ask about reduction..." 
-                className="bg-white/5 border-white/10 text-xs h-9"
+                placeholder="Ask your advisor..." 
+                className="bg-white/5 border-white/10 text-xs h-9 focus-visible:ring-primary/30"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -131,7 +119,7 @@ export function FloatingAIAdvisor() {
       ) : (
         <Button 
           size="lg" 
-          className="h-14 w-14 rounded-full bg-primary shadow-lg shadow-primary/30 hover:scale-110 transition-transform flex items-center justify-center p-0"
+          className="h-14 w-14 rounded-full bg-primary shadow-lg shadow-primary/40 hover:scale-110 transition-transform flex items-center justify-center p-0 ring-4 ring-primary/20"
           onClick={() => setIsOpen(true)}
         >
           <Sparkles className="h-6 w-6 text-primary-foreground" />
