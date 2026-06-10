@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Car, Zap, Utensils, Trash2, Home, Check } from 'lucide-react';
+import { Car, Zap, Utensils, Trash2, Check } from 'lucide-react';
 
 const RECOMMENDATIONS = {
   transport: [
@@ -30,52 +30,52 @@ const RECOMMENDATIONS = {
 
 export default function RecommendationsPage() {
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-8 pb-10 animate-fade-in">
       <div>
-        <h1 className="text-4xl font-headline font-bold">Sustainability Advice</h1>
-        <p className="text-muted-foreground">Curated tips to help you lower your environmental footprint.</p>
+        <h1 className="text-4xl font-headline font-bold text-foreground">Sustainability Advice</h1>
+        <p className="text-zinc-600">Curated tips to help you lower your environmental footprint.</p>
       </div>
 
       <Tabs defaultValue="transport" className="w-full">
-        <TabsList className="bg-white/5 p-1 rounded-xl h-auto mb-8 flex-wrap">
-          <TabsTrigger value="transport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline">
+        <TabsList className="bg-white border border-zinc-100 p-1 rounded-xl h-auto mb-8 flex-wrap">
+          <TabsTrigger value="transport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline font-bold">
              <Car className="mr-2 h-4 w-4" /> Transport
           </TabsTrigger>
-          <TabsTrigger value="energy" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline">
+          <TabsTrigger value="energy" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline font-bold">
              <Zap className="mr-2 h-4 w-4" /> Energy
           </TabsTrigger>
-          <TabsTrigger value="food" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline">
+          <TabsTrigger value="food" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline font-bold">
              <Utensils className="mr-2 h-4 w-4" /> Food
           </TabsTrigger>
-          <TabsTrigger value="waste" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline">
+          <TabsTrigger value="waste" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-3 px-6 rounded-lg font-headline font-bold">
              <Trash2 className="mr-2 h-4 w-4" /> Waste
           </TabsTrigger>
         </TabsList>
 
         {Object.entries(RECOMMENDATIONS).map(([key, items]) => (
-          <TabsContent key={key} value={key} className="animate-in fade-in slide-in-from-left-4 duration-300">
+          <TabsContent key={key} value={key}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {items.map((item, idx) => (
-                <Card key={idx} className="glass-card border-none hover:bg-white/10 transition-colors group">
+                <Card key={idx} className="glass-card group">
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
-                       <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">{item.impact} Impact</Badge>
+                       <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-bold uppercase text-[10px] tracking-widest">{item.impact} Impact</Badge>
                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                          <Check className="h-4 w-4" />
                        </Button>
                     </div>
-                    <CardTitle className="font-headline">{item.title}</CardTitle>
+                    <CardTitle className="font-headline text-foreground">{item.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                    <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                    <p className="text-sm text-zinc-600 leading-relaxed">{item.desc}</p>
+                    <div className="flex justify-between items-center pt-4 border-t border-black/5">
                       <div className="text-xs space-y-1">
-                        <p className="text-muted-foreground uppercase font-bold">Difficulty</p>
-                        <p>{item.difficulty}</p>
+                        <p className="text-zinc-500 uppercase font-black tracking-tighter">Difficulty</p>
+                        <p className="font-bold text-foreground">{item.difficulty}</p>
                       </div>
                       <div className="text-right text-xs space-y-1">
-                        <p className="text-muted-foreground uppercase font-bold">Estimated Saving</p>
-                        <p className="text-primary font-mono font-bold">{item.savings}</p>
+                        <p className="text-zinc-500 uppercase font-black tracking-tighter">Estimated Saving</p>
+                        <p className="text-primary font-mono font-black">{item.savings}</p>
                       </div>
                     </div>
                   </CardContent>

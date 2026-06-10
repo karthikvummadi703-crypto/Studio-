@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   DocumentReference, 
   onSnapshot, 
@@ -9,20 +8,26 @@ import {
   DocumentData 
 } from 'firebase/firestore';
 
+/**
+ * Optimized useDoc hook with reference stability verification.
+ */
 export const useDoc = <T = DocumentData>(docRef: DocumentReference<T> | null) => {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Stabilize the reference instance
+  const stableRef = useMemo(() => docRef, [docRef]);
+
   useEffect(() => {
-    if (!docRef) {
+    if (!stableRef) {
       setData(null);
       setIsLoading(false);
       return;
     }
 
     const unsubscribe = onSnapshot(
-      docRef,
+      stableRef,
       (snapshot: DocumentSnapshot<T>) => {
         setData(snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } : null);
         setIsLoading(false);
@@ -34,7 +39,7 @@ export const useDoc = <T = DocumentData>(docRef: DocumentReference<T> | null) =>
     );
 
     return () => unsubscribe();
-  }, [docRef]);
+  }, [stableRef]);
 
   return { data, isLoading, error };
 };

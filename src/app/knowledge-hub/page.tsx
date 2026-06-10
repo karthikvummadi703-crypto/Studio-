@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -19,16 +18,15 @@ import {
   BookOpen, 
   Sparkles, 
   TrendingDown, 
-  Lightbulb, 
   Globe, 
   Leaf, 
   Zap,
   ArrowUpRight,
-  Info,
-  Clock
+  Clock,
+  Lightbulb
 } from 'lucide-react';
-import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 
 const EDUCATIONAL_TOPICS = [
@@ -78,22 +76,27 @@ export default function KnowledgeHubPage() {
   const { user } = useUser();
   const db = useFirestore();
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
+  const [latestRecord, setLatestRecord] = useState<any>(null);
 
-  const recordsQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'calculator_records'), 
-      where('userId', '==', user.uid),
-      orderBy('timestamp', 'desc'), 
-      limit(1)
-    );
+  useEffect(() => {
+    async function fetchOneTime() {
+      if (!db || !user) return;
+      const q = query(
+        collection(db, 'calculator_records'), 
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc'), 
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setLatestRecord(snap.docs[0].data());
+      }
+    }
+    fetchOneTime();
   }, [db, user]);
 
-  const { data: latestRecords } = useCollection(recordsQuery);
-  const latestRecord = latestRecords?.[0];
-
   return (
-    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 space-y-12 animate-fade-in">
       <header className="text-center space-y-3">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
           Knowledge Hub
@@ -121,7 +124,7 @@ export default function KnowledgeHubPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="educational" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+        <TabsContent value="educational" className="outline-none">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {EDUCATIONAL_TOPICS.map((topic, i) => (
               <Card key={i} className="bg-white border border-zinc-200 shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
@@ -142,7 +145,7 @@ export default function KnowledgeHubPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 pt-0 space-y-6">
-                  <p className="text-zinc-500 text-sm leading-relaxed line-clamp-3">
+                  <p className="text-zinc-600 text-sm leading-relaxed line-clamp-3">
                     {topic.desc}
                   </p>
                   <Button 
@@ -158,10 +161,9 @@ export default function KnowledgeHubPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="personalized" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+        <TabsContent value="personalized" className="outline-none">
           {latestRecord ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Impact Card */}
               <Card className="bg-white border border-zinc-200 shadow-sm rounded-2xl overflow-hidden h-fit">
                 <CardHeader className="p-8 border-b border-zinc-100 bg-zinc-50/50">
                   <div className="flex items-center gap-3">
@@ -169,15 +171,15 @@ export default function KnowledgeHubPage() {
                     <CardTitle className="font-headline text-lg">Impact Breakdown</CardTitle>
                   </div>
                   <CardDescription className="text-[10px] font-bold uppercase tracking-widest mt-1">
-                    Telemetry from {new Date(latestRecord.timestamp).toLocaleDateString()}
+                    Telemetry from {new Date(latestRecord.timestamp?.toDate ? latestRecord.timestamp.toDate() : latestRecord.timestamp).toLocaleDateString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 space-y-8">
                   <div className="text-center py-6 bg-zinc-50 rounded-2xl border border-zinc-100">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Latest Journey Emission</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Latest Journey Emission</p>
                     <div className="flex items-baseline justify-center gap-2">
                       <span className="text-5xl font-headline font-bold text-foreground">{latestRecord.co2?.toFixed(1) || latestRecord.totalEmissions?.toFixed(1) || 0}</span>
-                      <span className="text-sm font-bold text-zinc-400 uppercase">kgCO2e</span>
+                      <span className="text-sm font-bold text-zinc-500 uppercase">kgCO2e</span>
                     </div>
                     <p className="text-[10px] font-bold text-zinc-500 mt-2">
                       {latestRecord.start} to {latestRecord.destination}
@@ -196,7 +198,6 @@ export default function KnowledgeHubPage() {
                 </CardContent>
               </Card>
 
-              {/* Insights Card */}
               <div className="space-y-6">
                 <Card className="bg-zinc-900 text-white rounded-2xl p-8 border-none relative overflow-hidden shadow-xl">
                   <div className="relative z-10 space-y-6">
@@ -223,12 +224,12 @@ export default function KnowledgeHubPage() {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-headline font-bold text-foreground">Insights Locked</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">
+                  <p className="text-zinc-600 text-sm leading-relaxed">
                     Complete your first carbon impact audit to unlock hyper-personalized analysis and reduction strategies.
                   </p>
                 </div>
                 <Link href="/calculator" className="block">
-                  <Button className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/10 hover:scale-[1.02] transition-transform">
+                  <Button className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
                     Start Impact Audit
                   </Button>
                 </Link>
@@ -238,7 +239,6 @@ export default function KnowledgeHubPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Article Dialog */}
       <Dialog open={!!selectedTopic} onOpenChange={() => setSelectedTopic(null)}>
         <DialogContent className="max-w-2xl bg-white rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
           <div className="p-8 space-y-6">
@@ -249,12 +249,12 @@ export default function KnowledgeHubPage() {
               <DialogTitle className="text-3xl font-headline font-bold text-foreground leading-tight">
                 {selectedTopic?.title}
               </DialogTitle>
-              <DialogDescription className="text-sm font-medium text-zinc-400 mt-2">
+              <DialogDescription className="text-sm font-medium text-zinc-500 mt-2">
                 Knowledge Base Article • Environmental Science
               </DialogDescription>
             </DialogHeader>
             <div className="prose prose-zinc max-w-none">
-              <p className="text-zinc-600 leading-relaxed text-lg">
+              <p className="text-zinc-700 leading-relaxed text-lg">
                 {selectedTopic?.content}
               </p>
             </div>

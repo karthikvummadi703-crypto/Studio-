@@ -40,12 +40,12 @@ const TRANSPORT_MODES = [
 const MetricDisplay = memo(({ label, value, unit, color, isBadge }: any) => {
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{label}</p>
       {isBadge ? (
         <p className={cn("text-[10px] font-black tracking-widest uppercase", color)}>{value}</p>
       ) : (
         <p className={cn("text-3xl font-headline font-bold tabular-nums", color)}>
-          {value} <span className="text-[10px] font-black text-zinc-300 ml-1 uppercase">{unit}</span>
+          {value} <span className="text-[10px] font-black text-zinc-400 ml-1 uppercase">{unit}</span>
         </p>
       )}
     </div>
@@ -139,13 +139,13 @@ export default function CalculatorPage() {
   const discardResult = useCallback(() => setActiveResult(null), []);
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-3xl mx-auto py-12 px-4 space-y-12 animate-fade-in">
       <header className="text-center space-y-3">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight italic">Carbon Impact Audit</h1>
-        <p className="text-muted-foreground text-sm max-w-md mx-auto font-medium">Verify your transportation footprint with real-time telemetry verification.</p>
+        <p className="text-zinc-600 text-sm max-w-md mx-auto font-medium">Verify your transportation footprint with real-time telemetry verification.</p>
       </header>
 
-      <Card className="bg-white/90 border-white/60 shadow-2xl rounded-[2.5rem] overflow-hidden">
+      <Card className="bg-white border-zinc-100 shadow-sm rounded-[2.5rem] overflow-hidden">
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
@@ -156,7 +156,7 @@ export default function CalculatorPage() {
                   placeholder="Sync Origin" 
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
-                  className="pl-11 h-14 bg-white/60 border-white/40 rounded-2xl focus-visible:ring-primary/20 transition-all"
+                  className="pl-11 h-14 bg-zinc-50 border-zinc-100 rounded-2xl focus-visible:ring-primary/20 transition-all"
                 />
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function CalculatorPage() {
                   placeholder="Sync Destination" 
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="pl-11 h-14 bg-white/60 border-white/40 rounded-2xl focus-visible:ring-primary/20 transition-all"
+                  className="pl-11 h-14 bg-zinc-50 border-zinc-100 rounded-2xl focus-visible:ring-primary/20 transition-all"
                 />
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function CalculatorPage() {
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2 group",
                     selectedMode === mode.id 
                       ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                      : "bg-white border-white text-zinc-500 hover:bg-white/60"
+                      : "bg-white border-zinc-100 text-zinc-500 hover:bg-zinc-50"
                   )}
                 >
                   {typeof mode.icon === 'function' ? <mode.icon className="h-5 w-5" /> : <Car className="h-5 w-5" />}
@@ -207,8 +207,8 @@ export default function CalculatorPage() {
       </Card>
 
       {activeResult && (
-        <section className="space-y-8 animate-in slide-in-from-bottom-6 duration-700 pb-10">
-          <Card className="bg-white/90 border-white/80 shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <section className="space-y-8 animate-fade-in pb-10">
+          <Card className="bg-white border-zinc-200 shadow-sm rounded-[2.5rem] overflow-hidden">
             <div className="p-10 space-y-10">
               <div className="flex justify-between items-center">
                 <h3 className="font-headline font-bold text-2xl tracking-tight italic">Audit Verification</h3>

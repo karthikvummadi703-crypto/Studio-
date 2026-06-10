@@ -17,12 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Loader2, Leaf, Sparkles, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/lib/logger';
 import { COLLECTIONS, APP_METADATA } from '@/lib/constants';
 
-/**
- * Login Page component for handling user authentication.
- */
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -41,7 +37,6 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-      logger.error('[Login] Error:', error);
       toast({
         variant: "destructive",
         title: "Login Failed",
@@ -72,7 +67,6 @@ export default function LoginPage() {
       
       router.push('/dashboard');
     } catch (error: any) {
-      logger.error('[Login] Google Error:', error);
       toast({
         variant: "destructive",
         title: "Google Login Failed",
@@ -107,10 +101,8 @@ export default function LoginPage() {
         timestamp: serverTimestamp()
       });
 
-      toast({ title: "Demo Mode Active", description: "Exploring with anonymous telemetry." });
       router.push('/dashboard');
     } catch (error: any) {
-      logger.error('[Login] Demo Error:', error);
       toast({
         variant: "destructive",
         title: "Demo Access Failed",

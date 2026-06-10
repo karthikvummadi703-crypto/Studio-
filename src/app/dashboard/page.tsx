@@ -37,7 +37,7 @@ const HeroMetric = memo(({ label, value, subValue, color, isSmall }: any) => (
 HeroMetric.displayName = 'HeroMetric';
 
 const KPICard = memo(({ label, value, unit, icon: Icon, color }: any) => (
-  <div className="bg-white/90 rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border border-white/40 shadow-xl">
+  <div className="bg-white rounded-2xl p-6 flex items-center justify-between group transition-all border border-zinc-100 shadow-sm">
      <div className="space-y-1">
         <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
         <div className="flex items-baseline gap-2">
@@ -86,7 +86,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
+    <div className="space-y-10 animate-fade-in">
       <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1">
           <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.3em]">Strategy Node Alpha</p>
@@ -103,7 +103,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="bg-white/90 rounded-[2.5rem] p-10 relative overflow-hidden border border-white/40 shadow-2xl">
+      <section className="bg-white rounded-[2.5rem] p-10 relative overflow-hidden border border-zinc-100 shadow-sm">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-12 items-center">
           <div className="lg:col-span-3 space-y-10">
             <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="hidden lg:flex flex-col items-center justify-center space-y-4 p-8 bg-white/40 rounded-[2.5rem] border border-white/60 shadow-xl">
+          <div className="hidden lg:flex flex-col items-center justify-center space-y-4 p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100 shadow-sm">
              <div className="relative flex items-center justify-center">
                 <svg className="w-32 h-32 transform -rotate-90">
                   <circle className="text-zinc-200" strokeWidth="8" stroke="currentColor" fill="transparent" r="56" cx="64" cy="64" />
@@ -135,7 +135,7 @@ export default function Dashboard() {
                   <span className="text-[8px] font-black text-muted-foreground tracking-widest uppercase">Score</span>
                 </div>
              </div>
-             <Badge variant="outline" className="bg-white/80 border-primary/20 text-primary text-[9px] font-black uppercase px-4 py-1">Operational</Badge>
+             <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[9px] font-black uppercase px-4 py-1">Operational</Badge>
           </div>
         </div>
       </section>
@@ -144,7 +144,7 @@ export default function Dashboard() {
         <EmptyState />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-2 bg-white/90 border-white/60 rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between shadow-xl">
+          <Card className="lg:col-span-2 bg-white border-zinc-100 rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between shadow-sm">
             {activeChallenge ? (
               <>
                 <CardHeader className="p-0 mb-8">
@@ -208,7 +208,7 @@ export default function Dashboard() {
 
 function EmptyState() {
   return (
-    <Card className="bg-white/90 border-white/60 rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+    <Card className="bg-white border-zinc-100 rounded-[2.5rem] p-12 text-center space-y-8 shadow-sm">
       <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto ring-8 ring-primary/5">
         <Sparkles className="h-10 w-10 text-primary animate-pulse" />
       </div>

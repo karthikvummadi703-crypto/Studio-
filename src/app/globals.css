@@ -32,7 +32,6 @@
     @apply border-border outline-none;
   }
   
-  /* Robust visible focus rings for WCAG 2.1 compliance */
   *:focus-visible {
     @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
   }
@@ -47,7 +46,7 @@
 }
 
 .glass-card {
-  @apply bg-white/90 border border-white/40 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.08)] transition-all duration-300;
+  @apply bg-white border border-zinc-100 shadow-sm transition-all duration-200;
 }
 
 .emerald-glow {
@@ -58,8 +57,12 @@
   @apply bg-primary text-white shadow-xl shadow-primary/25 border-none scale-[1.02];
 }
 
-.transition-all {
-  will-change: transform, opacity;
+.animate-spin {
+  will-change: transform;
+}
+
+.animate-pulse {
+  will-change: opacity;
 }
 
 ::-webkit-scrollbar {
@@ -88,7 +91,6 @@
   border-radius: 10px;
 }
 
-/* Skip link styling */
 .sr-only {
   position: absolute;
   width: 1px;

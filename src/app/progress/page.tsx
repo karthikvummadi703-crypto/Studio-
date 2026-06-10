@@ -1,23 +1,17 @@
-
 "use client";
 
-import { useMemo, useCallback, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Milestone, Award, TrendingDown, Sparkles, Target, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 
-const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> });
-const Area = dynamic(() => import('recharts').then(m => m.Area), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
-const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
+const AreaChartComponent = dynamic(() => import('@/components/charts/area-chart'), { 
+  ssr: false, 
+  loading: () => <div className="h-[400px] w-full bg-zinc-50 rounded-2xl animate-pulse flex items-center justify-center text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Initialising Analytics...</div> 
+});
 
 export default function ProgressPage() {
   const { user } = useUser();
@@ -28,7 +22,8 @@ export default function ProgressPage() {
     return query(
       collection(db, 'calculator_records'), 
       where('userId', '==', user.uid), 
-      orderBy('timestamp', 'asc')
+      orderBy('timestamp', 'asc'),
+      limit(50)
     );
   }, [db, user]);
   
@@ -37,30 +32,13 @@ export default function ProgressPage() {
   const chartData = useMemo(() => {
     if (!records?.length) return [];
     return records.map((r: any) => ({
-      date: new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: new Date(r.timestamp?.toDate ? r.timestamp.toDate() : r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       emissions: Number(r.co2 || 0).toFixed(2),
       goal: 1.5
     }));
   }, [records]);
 
   const hasData = useMemo(() => chartData.length > 0, [chartData]);
-
-  const Achievement = useCallback(({ icon: Icon, title, date, color, active }: any) => (
-    <div className={cn(
-      "flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500",
-      active 
-        ? "bg-white border-zinc-100 shadow-sm hover:shadow-md border scale-100" 
-        : "bg-zinc-50 border-transparent opacity-40 grayscale scale-95"
-    )}>
-      <div className={cn("p-3 rounded-2xl bg-primary/10", color)}>
-        <Icon className="h-6 w-6" aria-hidden="true" />
-      </div>
-      <div>
-        <p className="text-[11px] font-black text-foreground uppercase tracking-wider">{title}</p>
-        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">{active ? date : 'Locked'}</p>
-      </div>
-    </div>
-  ), []);
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -69,7 +47,7 @@ export default function ProgressPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-in fade-in duration-1000">
+    <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-fade-in">
       <header className="space-y-4">
         <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em]">
           <TrendingDown className="h-3 w-3" /> Growth Telemetry Node
@@ -79,7 +57,7 @@ export default function ProgressPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <Card className="lg:col-span-2 bg-white/90 border-zinc-200 shadow-2xl rounded-[3rem] overflow-hidden group">
+        <Card className="lg:col-span-2 bg-white border-zinc-200 shadow-sm rounded-[3rem] overflow-hidden group">
           <CardHeader className="p-12 border-b border-zinc-50 flex flex-row items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="font-headline text-3xl tracking-tight">Carbon Evolution</CardTitle>
@@ -87,9 +65,9 @@ export default function ProgressPage() {
             </div>
             <Target className="h-8 w-8 text-primary/10 group-hover:text-primary/30 transition-colors" />
           </CardHeader>
-          <CardContent className="h-[500px] p-12">
+          <CardContent className="p-12">
             {!hasData ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-30 select-none">
+              <div className="h-64 flex flex-col items-center justify-center text-center space-y-6 opacity-30 select-none">
                 <div className="p-6 bg-zinc-100 rounded-[2rem]">
                   <TrendingDown className="h-16 w-16 text-zinc-300" />
                 </div>
@@ -99,65 +77,13 @@ export default function ProgressPage() {
                 </div>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#00000008" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 700 }} 
-                    dy={15}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 700 }} 
-                    dx={-15}
-                  />
-                  <Tooltip 
-                    cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                      border: '1px solid rgba(0,0,0,0.05)', 
-                      borderRadius: '24px',
-                      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)',
-                      padding: '16px'
-                    }}
-                    labelStyle={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '10px', color: '#71717a', letterSpacing: '0.1em', marginBottom: '8px' }}
-                    itemStyle={{ fontWeight: 800, fontSize: '14px', color: 'hsl(var(--primary))' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="emissions" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={4}
-                    fillOpacity={1} 
-                    fill="url(#chartGradient)" 
-                    animationDuration={2000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="goal" 
-                    stroke="#e4e4e7" 
-                    strokeWidth={2}
-                    strokeDasharray="8 8" 
-                    dot={false} 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <AreaChartComponent data={chartData} />
             )}
           </CardContent>
         </Card>
 
         <aside className="space-y-10">
-          <Card className="bg-white border-zinc-200 shadow-xl rounded-[2.5rem] p-10 hover:shadow-2xl transition-all">
+          <Card className="bg-white border-zinc-200 shadow-sm rounded-[2.5rem] p-10 hover:shadow-md transition-all">
             <CardHeader className="px-0 pt-0 pb-8">
               <CardTitle className="font-headline text-xl tracking-tight flex items-center gap-3">
                 <Target className="h-6 w-6 text-primary" /> Core Targets
@@ -200,6 +126,25 @@ function GoalItem({ label, progress, completed }: any) {
           className={cn("h-full transition-all duration-1500 ease-in-out", completed ? "bg-primary shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-primary/40")}
           style={{ width: `${progress}%` }}
         />
+      </div>
+    </div>
+  );
+}
+
+function Achievement({ icon: Icon, title, date, color, active }: any) {
+  return (
+    <div className={cn(
+      "flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500",
+      active 
+        ? "bg-white/5 border-white/10 shadow-sm hover:bg-white/10 border scale-100" 
+        : "bg-white/5 border-transparent opacity-40 grayscale scale-95"
+    )}>
+      <div className={cn("p-3 rounded-2xl bg-primary/10", color)}>
+        <Icon className="h-6 w-6" aria-hidden="true" />
+      </div>
+      <div>
+        <p className="text-[11px] font-black text-white uppercase tracking-wider">{title}</p>
+        <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{active ? date : 'Locked'}</p>
       </div>
     </div>
   );

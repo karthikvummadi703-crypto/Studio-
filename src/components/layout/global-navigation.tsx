@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MoreHorizontal, Bell, Search, X } from 'lucide-react';
@@ -8,32 +8,21 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const FloatingAIAdvisor = dynamic(
   () => import('@/components/ai/floating-advisor').then(m => ({ default: m.FloatingAIAdvisor })),
-  { ssr: false }
+  { ssr: false, loading: () => null }
 );
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user, isLoading } = useUser();
+  const { user } = useUser();
   const pathname = usePathname();
-  const router = useRouter();
 
   const isAuthPage = useMemo(() => {
     return pathname === '/login' || pathname === '/register' || pathname === '/';
   }, [pathname]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (!user && !isAuthPage) {
-        router.replace('/login');
-      } else if (user && isAuthPage) {
-        router.replace('/dashboard');
-      }
-    }
-  }, [isLoading, user, isAuthPage, router]);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
@@ -65,7 +54,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {showNav && (
-          <header className="h-16 border-b border-black/5 bg-white/95 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
+          <header className="h-16 border-b border-zinc-100 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleSidebar}
@@ -88,7 +77,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
                 <Input 
                   placeholder="Search..." 
                   aria-label="Search EcoPulse"
-                  className="pl-9 h-8 bg-white/40 border-primary/10 rounded-full text-[10px] focus-visible:ring-primary"
+                  className="pl-9 h-8 bg-zinc-50 border-primary/10 rounded-full text-[10px] focus-visible:ring-primary"
                 />
               </div>
               <button 
@@ -115,7 +104,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         >
           <div className={cn(
             "max-w-7xl mx-auto p-4 sm:p-8 pb-24 relative z-10",
-            showNav && "bg-white/10 min-h-full"
+            showNav && "min-h-full"
           )}>
             {children}
           </div>

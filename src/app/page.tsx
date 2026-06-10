@@ -1,46 +1,31 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { Loader2, Leaf } from 'lucide-react';
 
+/**
+ * Root page redirector. Handles immediate authentication routing
+ * to eliminate extra blank render cycles.
+ */
 export default function RootPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    console.log('[RootPage] Component mounted.');
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || isLoading) return;
-
-    if (user) {
-      console.log('[RootPage] Authenticated user detected, redirecting to dashboard...');
-      router.replace('/dashboard');
-    } else {
-      console.log('[RootPage] No user session found, redirecting to login...');
-      router.replace('/login');
-    }
-  }, [user, isLoading, router, mounted]);
-
-  if (!mounted) return null;
+    if (isLoading) return;
+    router.replace(user ? '/dashboard' : '/login');
+  }, [user, isLoading, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] relative z-50">
-      <div className="flex flex-col items-center gap-6 p-10 bg-white/60 backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-white/20">
-        <div className="p-4 bg-primary/10 rounded-[2rem] ring-8 ring-primary/5">
-          <Leaf className="h-12 w-12 text-primary" />
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center gap-4 p-8 bg-white rounded-3xl shadow-lg border border-zinc-100">
+        <div className="p-3 bg-primary/10 rounded-2xl">
+          <Leaf className="h-10 w-10 text-primary" />
         </div>
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-headline font-bold text-foreground">EcoPulse AI</h1>
-          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em]">Synchronizing Environment...</p>
-        </div>
-        <Loader2 className="h-6 w-6 text-primary animate-spin" />
+        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Loading...</p>
+        <Loader2 className="h-5 w-5 text-primary animate-spin" />
       </div>
     </div>
   );

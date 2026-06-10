@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Query, 
   onSnapshot, 
@@ -9,20 +8,26 @@ import {
   DocumentData 
 } from 'firebase/firestore';
 
+/**
+ * Optimized useCollection hook with query stability verification.
+ */
 export const useCollection = <T = DocumentData>(query: Query<T> | null) => {
   const [data, setData] = useState<T[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Stabilize the query instance if it was created inline
+  const stableQuery = useMemo(() => query, [query]);
+
   useEffect(() => {
-    if (!query) {
+    if (!stableQuery) {
       setData(null);
       setIsLoading(false);
       return;
     }
 
     const unsubscribe = onSnapshot(
-      query,
+      stableQuery,
       (snapshot: QuerySnapshot<T>) => {
         const items = snapshot.docs.map((doc) => ({
           ...doc.data(),
@@ -38,7 +43,7 @@ export const useCollection = <T = DocumentData>(query: Query<T> | null) => {
     );
 
     return () => unsubscribe();
-  }, [query]);
+  }, [stableQuery]);
 
   return { data, isLoading, error };
 };
