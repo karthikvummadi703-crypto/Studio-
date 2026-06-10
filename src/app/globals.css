@@ -45,7 +45,7 @@
   }
 }
 
-/* Optimized solid cards for maximum GPU performance */
+/* Solid high-performance cards without expensive backdrop-blur */
 .glass-card {
   @apply bg-white border border-zinc-100 shadow-sm transition-all duration-200;
 }
