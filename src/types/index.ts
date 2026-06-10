@@ -1,108 +1,57 @@
-import { Timestamp } from 'firebase/firestore';
-
 /**
- * Valid user levels in the EcoPulse ecosystem.
+ * @fileOverview Centralised TypeScript interfaces for EcoPulse AI.
  */
-export type UserLevel = 'Seedling' | 'Eco Warrior' | 'Climate Champion' | 'Planet Guardian';
 
-/**
- * Represents the primary user profile stored in Firestore.
- */
 export interface UserProfile {
-  id?: string;
   fullName: string;
   email: string;
   greenPoints: number;
   sustainabilityScore: number;
-  level: UserLevel;
-  createdAt: string | Timestamp | Date;
+  level: 'Seedling' | 'Eco Warrior' | 'Climate Champion' | 'Planet Guardian';
+  createdAt: any; // Firestore Timestamp
   completedChallenges: string[];
+  id?: string;
 }
 
-/**
- * A single message within a chat session.
- */
 export interface ChatMessage {
   role: 'user' | 'ai';
   text: string;
   timestamp: string;
 }
 
-/**
- * Represents a conversation session between a user and the AI advisor.
- */
 export interface AIConversation {
-  id?: string;
+  id: string;
   userId: string;
   title: string;
   messages: ChatMessage[];
-  updatedAt: string | Timestamp | Date;
+  createdAt: any;
+  updatedAt: any;
 }
 
-/**
- * A record of a carbon footprint calculation.
- */
-export interface CalculatorRecord {
+export interface CarbonRecord {
   id?: string;
   userId: string;
+  mode: string;
   start: string;
   destination: string;
-  mode: string;
   distance: number;
   co2: number;
-  impact: 'Low' | 'Medium' | 'High';
-  points: number;
-  timestamp: string | Timestamp | Date;
-  breakdown?: {
-    transportation: number;
-    homeEnergy: number;
-    food: number;
-    lifestyle: number;
-  };
+  pointsEarned: number;
+  timestamp: any;
 }
 
-/**
- * A single activity log entry.
- */
 export interface Activity {
   id?: string;
   userId: string;
-  type: 'initialization' | 'calculation' | 'milestone' | string;
+  type: 'milestone' | 'initialization' | 'challenge_complete' | 'carbon_log';
   description: string;
   pointsEarned: number;
-  timestamp: string | Timestamp | Date;
+  timestamp: any;
 }
 
-/**
- * A sustainability challenge definition.
- */
-export interface Challenge {
-  id: string;
-  title: string;
-  description: string;
-  reward: number;
-  icon: string;
-}
-
-/**
- * A single actionable recommendation from the AI.
- */
-export interface Recommendation {
-  action: string;
-  impactLevel: 'Low' | 'Medium' | 'High';
-  difficultyLevel: 'Easy' | 'Moderate' | 'Hard';
-  estimatedCarbonSavings: string;
-}
-
-/**
- * The complete structure of an AI-generated carbon reduction plan.
- */
-export interface CarbonReductionPlan {
-  personalizedAnalysis: string;
-  weeklyActionPlan: string;
-  monthlyImprovementStrategy: string;
-  transportationRecommendations: Recommendation[];
-  homeEnergyRecommendations: Recommendation[];
-  foodRecommendations: Recommendation[];
-  lifestyleRecommendations: Recommendation[];
+export interface EmissionsBreakdown {
+  transportation: number;
+  homeEnergy: number;
+  food: number;
+  lifestyle: number;
 }
