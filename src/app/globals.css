@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    /* Bright Vibrant Green Theme inspired by the lush blooming valley image */
+    /* Bright Vibrant Green Theme */
     --background: 140 60% 99%;
     --foreground: 145 50% 10%;
     --card: 0 0% 100%;
@@ -40,7 +40,7 @@
 }
 
 .glass-card {
-  @apply bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_15px_35px_-10px_rgba(16,185,129,0.1)];
+  @apply bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_0_rgba(16,185,129,0.05)];
 }
 
 .emerald-glow {

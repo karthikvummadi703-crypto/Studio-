@@ -20,15 +20,15 @@ import {
   Check,
   X,
   Loader2,
-  Info
+  Info,
+  Calculator as CalculatorIcon
 } from 'lucide-react';
-import { collection, doc, updateDoc, increment, addDoc, query, where, orderBy, limit } from 'firebase/firestore';
-import { useUser, useFirestore, useCollection } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { collection, doc, updateDoc, increment, addDoc } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-// Custom SVG for Motorcycle as it doesn't exist in Lucide
+// Custom SVG for Motorcycle to avoid build errors
 const MotorcycleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
@@ -65,7 +65,6 @@ export default function CalculatorPage() {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
 
   // Form State
   const [start, setStart] = useState('');
@@ -77,18 +76,6 @@ export default function CalculatorPage() {
   const [saving, setSaving] = useState(false);
   const [activeResult, setActiveResult] = useState<any>(null);
 
-  // Firestore History (just to show last record if any)
-  const historyQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'calculator_records'), 
-      where('userId', '==', user.uid), 
-      orderBy('timestamp', 'desc'),
-      limit(1)
-    );
-  }, [db, user]);
-  const { data: recentRecords } = useCollection(historyQuery);
-
   const handleCalculate = () => {
     if (!start || !destination) {
       toast({ title: "Missing Information", description: "Please enter both start and destination locations.", variant: "destructive" });
@@ -97,9 +84,8 @@ export default function CalculatorPage() {
 
     setCalculating(true);
     
-    // Simulating footprint calculation logic
+    // Simulate calculation logic
     setTimeout(() => {
-      // Mock distance logic for prototype (random 5-50km)
       const distance = parseFloat((Math.random() * 45 + 5).toFixed(1));
       const mode = TRANSPORT_MODES.find(m => m.id === selectedMode)!;
       const co2 = parseFloat((distance * mode.co2PerKm).toFixed(2));
@@ -134,7 +120,6 @@ export default function CalculatorPage() {
       });
 
       // 2. Update User Profile (Points & Score)
-      // Logic: More points for greener modes, higher score for low emissions
       const newScoreChange = Math.max(1, 10 - activeResult.co2);
       updateDoc(doc(db, 'users', user.uid), {
         greenPoints: increment(activeResult.points),
@@ -155,11 +140,10 @@ export default function CalculatorPage() {
         description: `Successfully added ${activeResult.points} Green Points to your account.`,
       });
 
-      // Clear current state and show success
+      // Reset
       setActiveResult(null);
       setStart('');
       setDestination('');
-      router.refresh();
     } catch (e) {
       toast({ title: "Error", description: "Could not save your impact data.", variant: "destructive" });
     } finally {
@@ -167,72 +151,71 @@ export default function CalculatorPage() {
     }
   };
 
+  const adviceText = useMemo(() => {
+    if (!activeResult) return '';
+    const mode = activeResult.mode;
+    if (mode === 'walking' || mode === 'bicycle') return "Outstanding! This journey generated virtually no carbon emissions. You made one of the most environmentally friendly choices possible.";
+    if (activeResult.impact === 'High') return "Consider using public transport for this route. The metro could reduce your carbon footprint by up to 70% compared to a car.";
+    if (activeResult.impact === 'Medium') return "You are making a moderate environmental impact. Try combining trips to reduce your overall weekly emissions.";
+    return "Great choice! Your journey generated very low emissions. You are helping reduce transportation emissions.";
+  }, [activeResult]);
+
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto space-y-10 pb-20">
       <header className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest">
           <Zap className="h-3 w-3" /> 10-Second Impact Audit
         </div>
-        <h1 className="text-5xl font-headline font-bold text-foreground">Carbon Calculator</h1>
+        <h1 className="text-4xl font-headline font-bold text-foreground">Carbon Calculator</h1>
         <p className="text-muted-foreground text-lg max-w-2xl">
-          Quickly estimate the environmental footprint of your journeys and earn rewards.
+          Enter your route details to instantly estimate your environmental impact.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Input Form Section */}
-        <Card className="lg:col-span-7 glass-card border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-          <CardHeader className="bg-primary/5 border-b border-black/5 p-8">
-            <CardTitle className="font-headline text-2xl">Journey Details</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* INPUT SECTION */}
+        <Card className="lg:col-span-7 glass-card border-none rounded-[2rem] overflow-hidden">
+          <CardHeader className="bg-primary/5 p-8 border-b border-black/5">
+            <CardTitle className="font-headline text-xl">Journey Audit</CardTitle>
           </CardHeader>
           <CardContent className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Starting Location</Label>
-                <div className="relative group">
-                  <Input 
-                    placeholder="e.g., Mumbai" 
-                    value={start}
-                    onChange={(e) => setStart(e.target.value)}
-                    className="h-14 bg-white/40 border-black/5 rounded-2xl pl-4 pr-10 text-lg focus-visible:ring-primary/20"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                    <Info className="h-4 w-4" />
-                  </div>
-                </div>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Starting Location</Label>
+                <Input 
+                  placeholder="e.g., Mumbai" 
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                  className="h-14 bg-white/50 border-black/5 rounded-2xl focus-visible:ring-primary/20 text-lg"
+                />
               </div>
               <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Destination</Label>
-                <div className="relative group">
-                  <Input 
-                    placeholder="e.g., Pune" 
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="h-14 bg-white/40 border-black/5 rounded-2xl pl-4 pr-10 text-lg focus-visible:ring-primary/20"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                </div>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Destination</Label>
+                <Input 
+                  placeholder="e.g., Pune" 
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="h-14 bg-white/50 border-black/5 rounded-2xl focus-visible:ring-primary/20 text-lg"
+                />
               </div>
             </div>
 
             <div className="space-y-6">
-              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Transport Method</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Transport Method</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {TRANSPORT_MODES.map((mode) => (
                   <button
                     key={mode.id}
                     onClick={() => setSelectedMode(mode.id)}
                     className={cn(
-                      "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-3",
+                      "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-3",
                       selectedMode === mode.id 
                         ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105" 
                         : "bg-white/40 border-black/5 text-muted-foreground hover:bg-white/60"
                     )}
                   >
                     <mode.icon className="h-6 w-6" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">{mode.label}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest">{mode.label}</span>
                   </button>
                 ))}
               </div>
@@ -241,25 +224,30 @@ export default function CalculatorPage() {
             <Button 
               onClick={handleCalculate} 
               disabled={calculating}
-              className="w-full h-16 bg-primary text-primary-foreground text-xl font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+              className="w-full h-16 bg-primary text-primary-foreground text-xl font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.01] transition-transform"
             >
               {calculating ? <Loader2 className="h-6 w-6 animate-spin" /> : "Calculate My Impact"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Results & Advice Section */}
+        {/* RESULTS SECTION */}
         <div className="lg:col-span-5 space-y-8">
           {activeResult ? (
-            <div className="animate-in slide-in-from-right-10 duration-500 space-y-8">
-              <Card className="glass-card border-none bg-primary text-primary-foreground p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
+            <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
+              <Card className="glass-card border-none bg-primary text-primary-foreground p-8 rounded-[2rem] shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-10">
                   <Sparkles className="h-24 w-24" />
                 </div>
-                <div className="space-y-6 relative z-10">
+                <div className="relative z-10 space-y-6">
                    <div className="flex justify-between items-center">
-                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Calculation Result</p>
-                     <Badge className="bg-white/20 text-white border-none">{activeResult.impact} Impact</Badge>
+                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Audit Results</p>
+                     <Badge className={cn(
+                       "border-none text-white",
+                       activeResult.impact === 'High' ? "bg-red-500" : activeResult.impact === 'Medium' ? "bg-orange-400" : "bg-emerald-400"
+                     )}>
+                       {activeResult.impact} Impact
+                     </Badge>
                    </div>
                    <div className="grid grid-cols-2 gap-8">
                       <div className="space-y-1">
@@ -271,32 +259,27 @@ export default function CalculatorPage() {
                         <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">CO2 Emitted</p>
                       </div>
                    </div>
-                   <div className="flex items-center gap-2 pt-4">
+                   <div className="flex items-center gap-3 pt-4 border-t border-white/10">
                       <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
                         <Sparkles className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="text-lg font-headline font-bold">+{activeResult.points} Green Points</p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Ready to earn</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Impact Reward</p>
                       </div>
                    </div>
                 </div>
               </Card>
 
               <Card className="glass-card border-none p-8 rounded-[2rem] space-y-6">
-                <h3 className="font-headline font-bold text-xl flex items-center gap-2">
-                  <Info className="h-5 w-5 text-primary" />
-                  Personalized Advice
-                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Info className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-headline font-bold text-lg">Personalized Advice</h3>
+                </div>
                 <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 italic text-sm leading-relaxed text-foreground">
-                  {activeResult.mode === 'walking' || activeResult.mode === 'bicycle' 
-                    ? "Outstanding! This journey generated virtually no carbon emissions. You made one of the most environmentally friendly choices possible."
-                    : activeResult.impact === 'High' 
-                    ? "Consider using public transport for this route. The metro could reduce your carbon footprint by up to 70% compared to a car."
-                    : activeResult.impact === 'Medium'
-                    ? "You are making a moderate environmental impact. Try combining trips to reduce your overall weekly emissions."
-                    : "Great choice! Your journey generated very low emissions."
-                  }
+                  {adviceText}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Button 
@@ -322,55 +305,28 @@ export default function CalculatorPage() {
                    <div className="p-2 bg-primary/20 rounded-lg">
                     <Sparkles className="h-4 w-4 text-primary" />
                    </div>
-                   <h4 className="text-sm font-bold uppercase tracking-widest text-primary">AI Advisor Insights</h4>
+                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary">AI Insights</h4>
                  </div>
                  <p className="text-xs text-muted-foreground leading-relaxed">
-                   Based on your selection of {activeResult.mode}, we estimate that switching to the metro for this specific {activeResult.distance}km journey would save you approximately {Math.max(0, activeResult.co2 - 0.5).toFixed(1)}kg of CO2 today.
+                   If you had taken the <span className="text-primary font-bold">Metro</span> instead of a {activeResult.mode}, your emissions would have been reduced by approximately <span className="text-primary font-bold">82%</span>.
                  </p>
               </Card>
             </div>
           ) : (
-            <div className="h-full flex flex-col">
-              <Card className="glass-card border-none flex-1 flex flex-col items-center justify-center text-center p-12 rounded-[2.5rem] space-y-6">
-                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
-                  <CalculatorIcon className="h-10 w-10 text-primary/40" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-headline font-bold text-foreground">No calculations yet</h3>
-                  <p className="text-muted-foreground max-w-[250px] mx-auto text-sm">
-                    Enter a route on the left to calculate your first environmental impact.
-                  </p>
-                </div>
-              </Card>
-            </div>
+            <Card className="glass-card border-none h-full flex flex-col items-center justify-center text-center p-12 rounded-[2.5rem] space-y-6">
+              <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
+                <CalculatorIcon className="h-10 w-10 text-primary/40" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-headline font-bold text-foreground">No carbon calculations yet</h3>
+                <p className="text-muted-foreground max-w-[250px] mx-auto text-sm">
+                  Enter a route on the left to calculate your first environmental impact audit.
+                </p>
+              </div>
+            </Card>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function CalculatorIcon({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <rect width="16" height="20" x="4" y="2" rx="2" />
-      <line x1="8" x2="16" y1="6" y2="6" />
-      <line x1="16" x2="16" y1="14" y2="18" />
-      <path d="M16 10h.01" />
-      <path d="M12 10h.01" />
-      <path d="M8 10h.01" />
-      <path d="M12 14h.01" />
-      <path d="M8 14h.01" />
-      <path d="M12 18h.01" />
-      <path d="M8 18h.01" />
-    </svg>
   );
 }
