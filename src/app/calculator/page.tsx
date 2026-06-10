@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,7 @@ import {
   MapPin,
   Navigation
 } from 'lucide-react';
-import { collection, doc, writeBatch, increment } from 'firebase/firestore';
+import { collection, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
 import { useUser, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -36,6 +35,23 @@ const TRANSPORT_MODES = [
   ), co2PerKm: 0.1, points: 5 },
   { id: 'ev', label: 'Electric Vehicle', icon: Zap, co2PerKm: 0.04, points: 8 },
 ] as const;
+
+// Memoized Metric Component
+const MetricDisplay = memo(({ label, value, unit, color, isBadge }: any) => {
+  return (
+    <div className="space-y-2">
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{label}</p>
+      {isBadge ? (
+        <p className={cn("text-[10px] font-black tracking-widest uppercase", color)}>{value}</p>
+      ) : (
+        <p className={cn("text-3xl font-headline font-bold tabular-nums", color)}>
+          {value} <span className="text-[10px] font-black text-zinc-300 ml-1 uppercase">{unit}</span>
+        </p>
+      )}
+    </div>
+  );
+});
+MetricDisplay.displayName = 'MetricDisplay';
 
 export default function CalculatorPage() {
   const { user } = useUser();
@@ -75,14 +91,13 @@ export default function CalculatorPage() {
         distance,
         co2,
         impact,
-        points: mode.points,
-        timestamp: new Date().toISOString()
+        points: mode.points
       });
       setCalculating(false);
-    }, 100);
+    }, 400);
   }, [start, destination, selectedMode, toast]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!activeResult || !user || !db) return;
     setSaving(true);
 
@@ -90,7 +105,7 @@ export default function CalculatorPage() {
       const batch = writeBatch(db);
       
       const recordRef = doc(collection(db, 'calculator_records'));
-      batch.set(recordRef, { ...activeResult, userId: user.uid });
+      batch.set(recordRef, { ...activeResult, userId: user.uid, timestamp: serverTimestamp() });
 
       const userRef = doc(db, 'users', user.uid);
       const scoreChange = Math.max(1, Math.min(10, 10 - activeResult.co2));
@@ -105,7 +120,7 @@ export default function CalculatorPage() {
         type: 'calculation',
         description: `Logged journey: ${activeResult.start} → ${activeResult.destination}`,
         pointsEarned: activeResult.points,
-        timestamp: new Date().toISOString()
+        timestamp: serverTimestamp()
       });
 
       await batch.commit();
@@ -119,7 +134,9 @@ export default function CalculatorPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [activeResult, user, db, toast]);
+
+  const discardResult = useCallback(() => setActiveResult(null), []);
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4 space-y-12 animate-in fade-in duration-700">
@@ -220,7 +237,7 @@ export default function CalculatorPage() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => setActiveResult(null)} 
+                  onClick={discardResult} 
                   disabled={saving}
                   className="border-zinc-200 bg-white h-14 rounded-2xl font-black uppercase tracking-widest hover:bg-red-50 transition-all"
                 >
@@ -230,21 +247,6 @@ export default function CalculatorPage() {
             </div>
           </Card>
         </section>
-      )}
-    </div>
-  );
-}
-
-function MetricDisplay({ label, value, unit, color, isBadge }: any) {
-  return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{label}</p>
-      {isBadge ? (
-        <p className={cn("text-[10px] font-black tracking-widest uppercase", color)}>{value}</p>
-      ) : (
-        <p className={cn("text-3xl font-headline font-bold tabular-nums", color)}>
-          {value} <span className="text-[10px] font-black text-zinc-300 ml-1 uppercase">{unit}</span>
-        </p>
       )}
     </div>
   );

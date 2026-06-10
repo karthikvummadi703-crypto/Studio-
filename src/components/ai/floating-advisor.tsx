@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import { Sparkles, X, Send, Loader2, Minimize2, Maximize2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,24 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getLevelFromPoints } from '@/lib/levels';
+
+// Memoized Bubble Component
+const Bubble = memo(({ message, isUser }: { message: any, isUser: boolean }) => (
+  <div className={cn(
+    "flex flex-col max-w-[90%] animate-in fade-in slide-in-from-bottom-2",
+    isUser ? "ml-auto items-end" : "items-start"
+  )}>
+    <div className={cn(
+      "p-4 rounded-[1.5rem] text-xs leading-relaxed shadow-sm",
+      isUser 
+        ? "bg-primary text-white rounded-tr-none font-medium" 
+        : "bg-zinc-50 border border-zinc-100 rounded-tl-none text-zinc-700"
+    )}>
+      {message.text}
+    </div>
+  </div>
+));
+Bubble.displayName = 'Bubble';
 
 export function FloatingAIAdvisor() {
   const { user } = useUser();
@@ -36,11 +53,10 @@ export function FloatingAIAdvisor() {
     }
   }, [messages, streamingText]);
 
-  const handleSend = async (customMsg?: string) => {
+  const handleSend = useCallback(async (customMsg?: string) => {
     const text = (customMsg || input).trim();
     if (!text || isLoading) return;
     
-    const startTime = performance.now();
     setMessages(prev => [...prev, { role: 'user', text }]);
     setInput('');
     setIsLoading(true);
@@ -79,25 +95,27 @@ export function FloatingAIAdvisor() {
       }
       
       setMessages(prev => [...prev, { role: 'ai', text: fullResponse }]);
-      console.log(`[Quick AI] Latency: ${(performance.now() - startTime).toFixed(0)}ms (Gemini Flash)`);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'ai', text: 'The AI is very busy. Please try again or visit the Full Advisor page.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: 'Service busy. Please visit Full Advisor page.' }]);
     } finally {
       setIsLoading(false);
       setStreamingText('');
     }
-  };
+  }, [input, isLoading, messages, profile]);
+
+  const toggleOpen = useCallback(() => setIsOpen(prev => !prev), []);
+  const toggleExpanded = useCallback(() => setIsExpanded(prev => !prev), []);
 
   return (
     <>
       <div className="fixed bottom-0 left-64 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-black/5 flex items-center justify-between px-10 z-40 transition-all duration-300">
-        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => setIsOpen(true)}>
+        <div className="flex items-center gap-4 group cursor-pointer" onClick={toggleOpen}>
            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
               <Sparkles className="h-5 w-5 text-primary" />
            </div>
            <div>
               <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Quick Assistant</p>
-              <p className="text-[11px] font-bold text-muted-foreground">Gemini Flash Active. Click to chat.</p>
+              <p className="text-[11px] font-bold text-muted-foreground">Gemini Flash Active</p>
            </div>
         </div>
 
@@ -141,7 +159,7 @@ export function FloatingAIAdvisor() {
               <div className="p-2 bg-primary rounded-xl shadow-md">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary">EcoPulse AI Quick</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary">AI Quick</CardTitle>
             </div>
             <div className="flex items-center gap-1">
               <Link href="/ai-advisor" onClick={() => setIsOpen(false)}>
@@ -149,7 +167,7 @@ export function FloatingAIAdvisor() {
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsExpanded(!isExpanded)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={toggleExpanded}>
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsOpen(false)}>
@@ -161,19 +179,7 @@ export function FloatingAIAdvisor() {
             <ScrollArea className="flex-1 p-6">
               <div className="space-y-6">
                 {messages.map((m, i) => (
-                  <div key={i} className={cn(
-                    "flex flex-col max-w-[90%] animate-in fade-in slide-in-from-bottom-2",
-                    m.role === 'user' ? "ml-auto items-end" : "items-start"
-                  )}>
-                    <div className={cn(
-                      "p-4 rounded-[1.5rem] text-xs leading-relaxed shadow-sm",
-                      m.role === 'user' 
-                        ? "bg-primary text-white rounded-tr-none font-medium" 
-                        : "bg-zinc-50 border border-zinc-100 rounded-tl-none text-zinc-700"
-                    )}>
-                      {m.text}
-                    </div>
-                  </div>
+                  <Bubble key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 {streamingText && (
                   <div className="flex flex-col max-w-[90%] items-start animate-in fade-in">
@@ -185,7 +191,7 @@ export function FloatingAIAdvisor() {
                 {isLoading && !streamingText && (
                   <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-bold tracking-widest animate-pulse px-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Gemini Flash Streaming...
+                    Streaming...
                   </div>
                 )}
                 <div ref={scrollRef} />

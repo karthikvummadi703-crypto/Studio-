@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -22,6 +21,36 @@ import { cn } from '@/lib/utils';
 import { CHALLENGES } from '@/lib/challenges';
 import { getLevelFromPoints } from '@/lib/levels';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
+
+// Memoized Stat Component
+const HeroMetric = memo(({ label, value, subValue, color, isSmall }: any) => (
+  <div className="space-y-1">
+    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+    <div className="flex items-baseline gap-1">
+      <span className={cn("font-headline font-bold tracking-tighter", isSmall ? "text-xl" : "text-3xl md:text-4xl", color)}>
+        {value}
+      </span>
+      {subValue && <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">{subValue}</span>}
+    </div>
+  </div>
+));
+HeroMetric.displayName = 'HeroMetric';
+
+const KPICard = memo(({ label, value, unit, icon: Icon, color }: any) => (
+  <div className="bg-white/90 rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border border-white/40 shadow-xl">
+     <div className="space-y-1">
+        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+        <div className="flex items-baseline gap-2">
+           <span className="text-2xl font-headline font-bold text-foreground">{value}</span>
+           <span className="text-[10px] font-bold text-muted-foreground/40 uppercase">{unit}</span>
+        </div>
+     </div>
+     <div className={cn("p-3 rounded-xl bg-black/5 transition-transform group-hover:scale-110", color)}>
+        <Icon className="h-6 w-6" />
+     </div>
+  </div>
+));
+KPICard.displayName = 'KPICard';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -173,37 +202,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function HeroMetric({ label, value, subValue, color, isSmall }: any) {
-  return (
-    <div className="space-y-1">
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
-      <div className="flex items-baseline gap-1">
-        <span className={cn("font-headline font-bold tracking-tighter", isSmall ? "text-xl" : "text-3xl md:text-4xl", color)}>
-          {value}
-        </span>
-        {subValue && <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">{subValue}</span>}
-      </div>
-    </div>
-  );
-}
-
-function KPICard({ label, value, unit, icon: Icon, color }: any) {
-  return (
-    <div className="bg-white/90 rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border border-white/40 shadow-xl">
-       <div className="space-y-1">
-          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
-          <div className="flex items-baseline gap-2">
-             <span className="text-2xl font-headline font-bold text-foreground">{value}</span>
-             <span className="text-[10px] font-bold text-muted-foreground/40 uppercase">{unit}</span>
-          </div>
-       </div>
-       <div className={cn("p-3 rounded-xl bg-black/5 transition-transform group-hover:scale-110", color)}>
-          <Icon className="h-6 w-6" />
-       </div>
     </div>
   );
 }

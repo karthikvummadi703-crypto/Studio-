@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/firebase';
-import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Registration page component for creating new environment nodes.
- * Includes strict input validation for production security.
  */
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,10 +28,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Validates user input before processing registration.
-   */
-  const validateInput = (): boolean => {
+  const validateInput = useCallback((): boolean => {
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,9 +50,9 @@ export default function RegisterPage() {
     }
 
     return true;
-  };
+  }, [fullName, email, password, toast]);
 
-  const handleRegister = async (e: React.FormEvent): Promise<void> => {
+  const handleRegister = useCallback(async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!validateInput()) return;
     
@@ -74,7 +70,7 @@ export default function RegisterPage() {
         greenPoints: 0,
         sustainabilityScore: 0,
         level: 'Seedling',
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
         completedChallenges: []
       };
 
@@ -93,7 +89,7 @@ export default function RegisterPage() {
         type: 'initialization',
         description: 'Profile telemetry initialized',
         pointsEarned: 0,
-        timestamp: new Date().toISOString()
+        timestamp: serverTimestamp()
       });
 
       toast({ title: "Node Registered", description: "Welcome to EcoPulse AI!" });
@@ -108,7 +104,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fullName, email, password, validateInput, router, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   signInWithEmailAndPassword, 
@@ -9,7 +9,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { auth, db } from '@/firebase';
-import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent): Promise<void> => {
+  const handleLogin = useCallback(async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!email || !password) return;
     
@@ -50,9 +50,9 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, router, toast]);
 
-  const handleGoogleLogin = async (): Promise<void> => {
+  const handleGoogleLogin = useCallback(async (): Promise<void> => {
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -60,19 +60,16 @@ export default function LoginPage() {
       const user = result.user;
 
       const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      const userDoc = await getDoc(userRef);
-
-      if (!userDoc.exists()) {
-        await setDoc(userRef, {
-          fullName: user.displayName || 'Eco Warrior',
-          email: user.email || '',
-          greenPoints: 0,
-          sustainabilityScore: 0,
-          level: 'Seedling',
-          createdAt: new Date().toISOString(),
-          completedChallenges: []
-        });
-      }
+      // Atomic setDoc with merge: true replaces getDoc + setDoc
+      await setDoc(userRef, {
+        fullName: user.displayName || 'Eco Warrior',
+        email: user.email || '',
+        greenPoints: 0,
+        sustainabilityScore: 0,
+        level: 'Seedling',
+        createdAt: serverTimestamp(),
+        completedChallenges: []
+      }, { merge: true });
       
       router.push('/dashboard');
     } catch (error: any) {
@@ -85,36 +82,31 @@ export default function LoginPage() {
     } finally {
       setGoogleLoading(false);
     }
-  };
+  }, [router, toast]);
 
-  const handleDemoMode = async (): Promise<void> => {
+  const handleDemoMode = useCallback(async (): Promise<void> => {
     setDemoLoading(true);
     try {
       const cred = await signInAnonymously(auth);
       const user = cred.user;
 
       const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      const userDoc = await getDoc(userRef);
+      await setDoc(userRef, {
+        fullName: 'Eco Explorer (Demo)',
+        greenPoints: 320,
+        sustainabilityScore: 68,
+        level: 'Eco Warrior',
+        createdAt: serverTimestamp(),
+        completedChallenges: ['challenge-1']
+      }, { merge: true });
 
-      if (!userDoc.exists()) {
-        await setDoc(userRef, {
-          fullName: 'Eco Explorer (Demo)',
-          email: '', // Omitted for anonymous security Best Practice
-          greenPoints: 320,
-          sustainabilityScore: 68,
-          level: 'Eco Warrior',
-          createdAt: new Date().toISOString(),
-          completedChallenges: ['challenge-1']
-        });
-
-        await addDoc(collection(db, COLLECTIONS.ACTIVITIES), {
-          userId: user.uid,
-          type: 'milestone',
-          description: 'Joined the EcoPulse network',
-          pointsEarned: 50,
-          timestamp: new Date().toISOString()
-        });
-      }
+      await addDoc(collection(db, COLLECTIONS.ACTIVITIES), {
+        userId: user.uid,
+        type: 'milestone',
+        description: 'Joined the EcoPulse network via Demo Mode',
+        pointsEarned: 50,
+        timestamp: serverTimestamp()
+      });
 
       toast({ title: "Demo Mode Active", description: "Exploring with anonymous telemetry." });
       router.push('/dashboard');
@@ -128,7 +120,7 @@ export default function LoginPage() {
     } finally {
       setDemoLoading(false);
     }
-  };
+  }, [router, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">

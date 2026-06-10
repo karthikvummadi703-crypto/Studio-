@@ -3,8 +3,8 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Hardened Firebase Configuration
- * Using verified project credentials for studio-9772282798-f7257.
+ * Verified Firebase Configuration for EcoPulse AI.
+ * Values are hardcoded for preview stability to ensure immediate availability.
  */
 const firebaseConfig = {
   apiKey: "AIzaSyCiAHwWhFFF7RyOByxe4PsYxOSy8jgKZAo",
