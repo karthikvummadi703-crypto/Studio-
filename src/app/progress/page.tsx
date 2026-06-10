@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +16,16 @@ import {
   Line,
 } from 'recharts';
 import { Trophy, Milestone, Award, TrendingDown, Sparkles, Target } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export default function ProgressPage() {
   const { user } = useUser();
   const db = useFirestore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Efficiency: Stabilized Firestore Query
   const recordsQuery = useMemo(() => {
@@ -37,13 +41,13 @@ export default function ProgressPage() {
 
   // Efficiency: Optimized data processing for charts
   const chartData = useMemo(() => {
-    if (!records?.length) return [];
-    return records.map(r => ({
-      date: new Date(r.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    if (!records?.length || !mounted) return [];
+    return records.map((r: any) => ({
+      date: new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       emissions: Number(r.co2 || r.totalEmissions || 0).toFixed(2),
       goal: 2.5 
     }));
-  }, [records]);
+  }, [records, mounted]);
 
   const hasData = useMemo(() => chartData.length > 0, [chartData]);
 

@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useDoc, useCollection, useFirestore } from '@/firebase';
 import { doc, query, collection, orderBy, limit, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -31,28 +32,27 @@ import { getLevelFromPoints } from '@/lib/levels';
 export default function Dashboard() {
   const { user } = useUser();
   const db = useFirestore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 1. Data Streams from Firestore
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
-  const { data: profile } = useDoc(profileRef);
+  const { data: profile } = useDoc<any>(profileRef);
 
   const activitiesQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(collection(db, 'activities'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'), limit(5));
   }, [db, user]);
-  const { data: activities } = useCollection(activitiesQuery);
+  const { data: activities } = useCollection<any>(activitiesQuery);
 
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(collection(db, 'calculator_records'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'));
   }, [db, user]);
-  const { data: records } = useCollection(recordsQuery);
-
-  const progressQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'challenge_progress'), where('userId', '==', user.uid), where('status', '==', 'active'));
-  }, [db, user]);
-  const { data: activeProgressDocs } = useCollection(progressQuery);
+  const { data: records } = useCollection<any>(recordsQuery);
 
   // 2. Derived State (Starting at 0 as per requirements)
   const points = profile?.greenPoints || 0;
@@ -62,20 +62,31 @@ export default function Dashboard() {
   
   // KPI Calculations
   const totalEmissions = records?.[0]?.totalEmissions || 0;
-  const totalSaved = records?.reduce((acc, curr) => {
-    // Basic logic: if emissions are lower than a baseline (e.g. 500), consider it saved
-    const baseline = 500;
-    return acc + (curr.totalEmissions < baseline ? baseline - curr.totalEmissions : 0);
-  }, 0) || 0;
+  const totalSaved = useMemo(() => {
+    if (!records) return 0;
+    return records.reduce((acc: number, curr: any) => {
+      const baseline = 500;
+      return acc + (curr.totalEmissions < baseline ? baseline - curr.totalEmissions : 0);
+    }, 0);
+  }, [records]);
 
   // 3. Sequential Challenge Logic
   const activeChallenge = useMemo(() => {
     const completedIds = profile?.completedChallenges || [];
-    // Sequential Progression: find the first challenge that isn't completed
     return CHALLENGES.find(c => !completedIds.includes(c.id)) || null;
   }, [profile]);
 
-  const hasData = records && records.length > 0;
+  const hasData = !!(records && records.length > 0);
+
+  const formattedDate = useMemo(() => {
+    if (!mounted) return "";
+    return new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  }, [mounted]);
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000">
@@ -87,7 +98,7 @@ export default function Dashboard() {
             {profile?.fullName || user?.displayName || 'Eco Warrior'}
           </h1>
           <p className="text-primary text-xs font-bold tracking-widest uppercase">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            {formattedDate}
           </p>
         </div>
         <div className="flex gap-4">
@@ -232,7 +243,7 @@ export default function Dashboard() {
                </div>
                <div className="glass-card rounded-[2rem] p-8 space-y-6 min-h-[200px] flex flex-col">
                   {activities && activities.length > 0 ? (
-                    activities.map((act, i) => (
+                    activities.map((act: any, i: number) => (
                       <div key={i} className="flex items-center justify-between border-b border-black/5 pb-4 last:border-0 last:pb-0">
                          <div className="flex items-center gap-4">
                             <div className="p-2 bg-primary/10 rounded-lg">
@@ -240,7 +251,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                <p className="text-[11px] font-bold text-foreground">{act.description}</p>
-                               <p className="text-[9px] text-muted-foreground uppercase">{new Date(act.timestamp).toLocaleDateString()}</p>
+                               <p className="text-[9px] text-muted-foreground uppercase">{mounted && act.timestamp ? new Date(act.timestamp).toLocaleDateString() : '---'}</p>
                             </div>
                          </div>
                          <Badge variant="secondary" className="text-[10px] text-primary bg-primary/5 border-primary/10">+{act.pointsEarned} Pts</Badge>

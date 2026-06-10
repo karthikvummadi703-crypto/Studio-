@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MoreHorizontal, Bell, Search, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,7 +12,12 @@ import { FloatingAIAdvisor } from '@/components/ai/floating-advisor';
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
@@ -29,7 +34,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden w-full">
       {/* Sidebar Overlay */}
-      {isSidebarOpen && (
+      {mounted && isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden transition-opacity" 
           onClick={closeSidebar}
@@ -41,7 +46,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
       <nav 
         className={cn(
           "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
-          isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+          mounted && isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         aria-label="Main Navigation"
       >

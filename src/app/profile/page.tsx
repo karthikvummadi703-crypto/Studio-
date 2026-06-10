@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,6 @@ import {
   Bell,
   Shield,
   LogOut,
-  Trash2,
   ChevronRight,
   ShieldAlert
 } from 'lucide-react';
@@ -28,13 +27,18 @@ import { doc } from 'firebase/firestore';
 import { getLevelFromPoints } from '@/lib/levels';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
   const { data: profile } = useDoc<any>(profileRef);
@@ -57,6 +61,11 @@ export default function ProfilePage() {
   );
 
   const level = getLevelFromPoints(profile.greenPoints || 0);
+
+  const joinedDate = useMemo(() => {
+    if (!mounted || !profile?.createdAt) return "---";
+    return new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, [mounted, profile?.createdAt]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
@@ -119,7 +128,7 @@ export default function ProfilePage() {
                             <Mail className="h-4 w-4 text-primary" /> {profile.email}
                           </p>
                           <p className="text-muted-foreground text-sm flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-primary" /> Joined {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '2024'}
+                            <Calendar className="h-4 w-4 text-primary" /> Joined {joinedDate}
                           </p>
                         </div>
                      </div>
@@ -249,8 +258,4 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }
