@@ -20,7 +20,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    console.log('[GlobalNav] Component Mounted');
+    console.log('[GlobalNav] Initialized and mounted.');
   }, []);
 
   const isAuthPage = useMemo(() => {
@@ -30,10 +30,10 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (mounted && !isLoading) {
       if (!user && !isAuthPage) {
-        console.log('[GlobalNav] Unauthorized access detected, redirecting to login...');
+        console.log('[GlobalNav] User unauthenticated, routing to login...');
         router.push('/login');
       } else if (user && isAuthPage) {
-        console.log('[GlobalNav] User logged in, redirecting to dashboard...');
+        console.log('[GlobalNav] User authenticated on auth page, routing to dashboard...');
         router.push('/dashboard');
       }
     }
@@ -51,8 +51,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // STABLE SHELL: Ensure identical structure on Server and Client to prevent Hydration Errors.
-  // We use bg-transparent to allow the layout background image to show through.
+  // STABLE SHELL: We always render the same root container to avoid hydration errors.
   const showNav = mounted && !isAuthPage && user;
 
   return (

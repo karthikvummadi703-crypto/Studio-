@@ -26,22 +26,24 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!fullName || !email || !password) return;
     
-    console.log('[Register] Starting registration for:', email);
+    console.log('[Register] Audit Started: Starting registration for:', email);
     setLoading(true);
 
     try {
       // 1. Create User in Firebase Auth
+      console.log('[Register] Step 1: Calling createUserWithEmailAndPassword...');
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const user = cred.user;
-      console.log('[Register] Firebase Auth User created. UID:', user.uid);
+      console.log('[Register] Step 1 Success: Firebase Auth User created. UID:', user.uid);
 
       // 2. Update Profile Name
+      console.log('[Register] Step 2: Updating display name to:', fullName);
       await updateProfile(user, { displayName: fullName });
-      console.log('[Register] User Profile updated with name:', fullName);
+      console.log('[Register] Step 2 Success: User Profile name updated.');
 
       // 3. Initialize Firestore Profile
-      console.log('[Register] Starting Firestore profile creation for UID:', user.uid);
-      await setDoc(doc(db, 'users', user.uid), {
+      console.log('[Register] Step 3: Starting Firestore profile creation for UID:', user.uid);
+      const userDocData = {
         fullName,
         email,
         greenPoints: 0,
@@ -49,11 +51,14 @@ export default function RegisterPage() {
         level: 'Seedling',
         createdAt: new Date().toISOString(),
         completedChallenges: []
-      });
-      console.log('[Register] Firestore user document created successfully.');
+      };
+      console.log('[Register] Step 3: Payload:', userDocData);
+      
+      await setDoc(doc(db, 'users', user.uid), userDocData);
+      console.log('[Register] Step 3 Success: Firestore user document created.');
 
       // 4. Log Initialization Activity
-      console.log('[Register] Logging initial activity...');
+      console.log('[Register] Step 4: Logging initial activity...');
       await addDoc(collection(db, 'activities'), {
         userId: user.uid,
         type: 'initialization',
@@ -61,7 +66,7 @@ export default function RegisterPage() {
         pointsEarned: 0,
         timestamp: new Date().toISOString()
       });
-      console.log('[Register] Initialization activity logged.');
+      console.log('[Register] Step 4 Success: Initialization activity logged.');
 
       toast({
         title: "Node Registered",
@@ -69,19 +74,22 @@ export default function RegisterPage() {
       });
 
       // 5. Redirection
-      console.log('[Register] Initiating redirect to /dashboard...');
+      console.log('[Register] Step 5: Initiating redirect to /dashboard...');
       router.push('/dashboard');
-      console.log('[Register] Router push called.');
+      console.log('[Register] Step 5 Success: router.push called.');
 
     } catch (error: any) {
-      console.error('[Register] Error during registration flow:', error);
+      console.error('[Register] CRITICAL ERROR during registration flow:', error);
+      console.error('[Register] Error Code:', error.code);
+      console.error('[Register] Error Message:', error.message);
+      
       toast({
         variant: "destructive",
         title: "Registration Failed",
         description: error.message || "An unexpected error occurred during initialization.",
       });
     } finally {
-      console.log('[Register] Registration flow ended. Stopping loading spinner.');
+      console.log('[Register] Audit Ended: Loading state set to false.');
       setLoading(false);
     }
   };

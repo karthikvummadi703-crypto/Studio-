@@ -32,41 +32,43 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email || !password) return;
     
-    console.log('[Login] Attempting sign-in for:', email);
+    console.log('[Login] Audit Started: Attempting sign-in for:', email);
     setLoading(true);
 
     try {
+      console.log('[Login] Step 1: Calling signInWithEmailAndPassword...');
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log('[Login] Auth success. UID:', cred.user.uid);
+      console.log('[Login] Step 1 Success: Auth success. UID:', cred.user.uid);
       
-      console.log('[Login] Redirecting to dashboard...');
+      console.log('[Login] Step 2: Initiating redirect to dashboard...');
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('[Login] Error:', error);
+      console.error('[Login] CRITICAL ERROR:', error);
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: error.message || "Invalid credentials. Please try again.",
       });
     } finally {
+      console.log('[Login] Audit Ended: Loading state false.');
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    console.log('[Login] Starting Google Sign-In...');
+    console.log('[Login] Step 1: Starting Google Sign-In...');
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      console.log('[Login] Google success. UID:', user.uid);
+      console.log('[Login] Step 1 Success: Google Auth UID:', user.uid);
 
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
 
       if (!userDoc.exists()) {
-        console.log('[Login] Initializing new Google profile...');
+        console.log('[Login] Step 2: Initializing new Google profile...');
         await setDoc(userRef, {
           fullName: user.displayName || 'Eco Warrior',
           email: user.email || '',
@@ -76,9 +78,10 @@ export default function LoginPage() {
           createdAt: new Date().toISOString(),
           completedChallenges: []
         });
+        console.log('[Login] Step 2 Success: Profile created.');
       }
       
-      console.log('[Login] Redirecting...');
+      console.log('[Login] Step 3: Redirecting...');
       router.push('/dashboard');
     } catch (error: any) {
       console.error('[Login] Google Error:', error);
@@ -93,18 +96,18 @@ export default function LoginPage() {
   };
 
   const handleDemoMode = async () => {
-    console.log('[Login] Starting Demo Mode...');
+    console.log('[Login] Step 1: Starting Demo Mode (Anonymous)...');
     setDemoLoading(true);
     try {
       const cred = await signInAnonymously(auth);
       const user = cred.user;
-      console.log('[Login] Anonymous Auth success. UID:', user.uid);
+      console.log('[Login] Step 1 Success: UID:', user.uid);
 
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
 
       if (!userDoc.exists()) {
-        console.log('[Login] Seeding demo profile data...');
+        console.log('[Login] Step 2: Seeding demo profile data...');
         await setDoc(userRef, {
           fullName: 'Eco Explorer (Demo)',
           email: 'demo@ecopulse.ai',
@@ -122,20 +125,21 @@ export default function LoginPage() {
           pointsEarned: 50,
           timestamp: new Date().toISOString()
         });
+        console.log('[Login] Step 2 Success: Demo data seeded.');
       }
 
       toast({
         title: "Demo Mode Active",
         description: "Explore EcoPulse with pre-populated telemetry.",
       });
-      console.log('[Login] Demo Redirecting...');
+      console.log('[Login] Step 3: Redirecting...');
       router.push('/dashboard');
     } catch (error: any) {
       console.error('[Login] Demo Error:', error);
       toast({
         variant: "destructive",
         title: "Demo Access Failed",
-        description: error.message,
+        description: "Anonymous Auth may be disabled in Firebase Console. " + error.message,
       });
     } finally {
       setDemoLoading(false);

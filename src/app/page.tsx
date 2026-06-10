@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -12,14 +13,17 @@ export default function RootPage() {
 
   useEffect(() => {
     setMounted(true);
+    console.log('[RootPage] Component mounted.');
   }, []);
 
   useEffect(() => {
     if (!mounted || isLoading) return;
 
     if (user) {
+      console.log('[RootPage] Authenticated user detected, redirecting to dashboard...');
       router.replace('/dashboard');
     } else {
+      console.log('[RootPage] No user session found, redirecting to login...');
       router.replace('/login');
     }
   }, [user, isLoading, router, mounted]);
