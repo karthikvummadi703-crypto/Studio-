@@ -13,43 +13,51 @@ import { getLevelFromPoints } from '@/lib/levels';
 export default function ProfilePage() {
   const { user } = useUser();
   const db = useFirestore();
-  const { data: profile } = useDoc(user ? doc(db!, 'users', user.uid) : null);
+  const profileRef = user && db ? doc(db, 'users', user.uid) : null;
+  const { data: profile } = useDoc(profileRef);
 
-  if (!profile) return null;
+  if (!profile) return (
+    <div className="flex items-center justify-center h-full">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="h-12 w-12 bg-primary/20 rounded-full" />
+        <p className="text-primary font-bold uppercase tracking-widest text-[10px]">Loading Profile...</p>
+      </div>
+    </div>
+  );
 
   const level = getLevelFromPoints(profile.greenPoints || 0);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-10">
+    <div className="max-w-4xl mx-auto space-y-8 pb-10 animate-in fade-in duration-500">
       <div>
         <h1 className="text-4xl font-headline font-bold text-foreground">Profile</h1>
         <p className="text-muted-foreground">Your sustainability footprint and milestones.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 glass-card border-none overflow-hidden">
-          <CardHeader className="bg-primary/5">
+        <Card className="md:col-span-2 glass-card border-none overflow-hidden shadow-xl">
+          <CardHeader className="bg-primary/5 border-b border-black/5">
             <div className="flex items-center gap-4">
-               <div className="h-20 w-20 rounded-2xl bg-primary/20 flex items-center justify-center text-primary font-headline text-4xl font-bold">
-                 {profile.fullName?.[0]}
+               <div className="h-20 w-20 rounded-2xl bg-primary/20 flex items-center justify-center text-primary font-headline text-4xl font-bold shadow-sm ring-4 ring-primary/5">
+                 {profile.fullName?.[0] || 'E'}
                </div>
                <div>
-                  <CardTitle className="font-headline text-2xl text-foreground">{profile.fullName}</CardTitle>
-                  <p className="text-muted-foreground text-sm flex items-center gap-1">
+                  <CardTitle className="font-headline text-2xl text-foreground">{profile.fullName || 'Eco Warrior'}</CardTitle>
+                  <p className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
                     <Mail className="h-3 w-3" /> {profile.email}
                   </p>
                </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="pt-8 space-y-8">
+            <div className="grid grid-cols-2 gap-8">
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Sustainability Score</p>
-                <p className="text-2xl font-headline font-bold text-primary">{profile.sustainabilityScore || 0}/100</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">Sustainability Score</p>
+                <p className="text-3xl font-headline font-bold text-primary emerald-glow">{profile.sustainabilityScore || 0}</p>
               </div>
               <div className="space-y-1 text-right">
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Green Points</p>
-                <p className="text-2xl font-headline font-bold text-accent">{profile.greenPoints || 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">Green Points</p>
+                <p className="text-3xl font-headline font-bold text-emerald-600">{profile.greenPoints || 0}</p>
               </div>
             </div>
             
@@ -60,15 +68,17 @@ export default function ProfilePage() {
                  <CheckCircle2 className="h-5 w-5 text-primary" />
                  Completed Challenges
                </h3>
-               <div className="flex flex-wrap gap-2">
+               <div className="flex flex-wrap gap-3">
                  {profile.completedChallenges && profile.completedChallenges.length > 0 ? (
                    profile.completedChallenges.map((id: string) => (
-                     <Badge key={id} variant="secondary" className="bg-black/5 border-black/10 px-3 py-1 text-muted-foreground">
+                     <Badge key={id} variant="secondary" className="bg-white/60 border-black/10 px-4 py-1.5 text-muted-foreground font-bold shadow-sm">
                        {id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                      </Badge>
                    ))
                  ) : (
-                   <p className="text-sm text-muted-foreground italic">No challenges completed yet. Start your first one on the dashboard!</p>
+                   <div className="p-4 rounded-xl bg-black/5 border border-dashed border-black/10 w-full text-center">
+                     <p className="text-xs text-muted-foreground italic">No challenges completed yet. Start your first one on the dashboard!</p>
+                   </div>
                  )}
                </div>
             </div>
@@ -76,30 +86,32 @@ export default function ProfilePage() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="glass-card border-none bg-primary/5 border border-primary/20">
+          <Card className="glass-card border-none bg-primary/5 border border-primary/20 shadow-lg">
              <CardHeader>
                 <CardTitle className="font-headline text-lg flex items-center gap-2 text-foreground">
                   <Trophy className="h-5 w-5 text-primary" />
                   Eco Level
                 </CardTitle>
              </CardHeader>
-             <CardContent className="text-center py-6">
+             <CardContent className="text-center py-10">
                 <div className="relative inline-block">
-                  <Sparkles className="h-20 w-20 text-primary opacity-20 absolute -top-4 -right-4 animate-pulse" />
-                  <p className="text-3xl font-headline font-bold text-primary uppercase tracking-tighter">{level}</p>
+                  <Sparkles className="h-20 w-20 text-primary opacity-20 absolute -top-6 -right-6 animate-pulse" />
+                  <p className="text-3xl font-headline font-bold text-primary uppercase tracking-tighter drop-shadow-sm">{level}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-4">Verified Eco-Warrior Status</p>
+                <p className="text-[9px] font-bold text-muted-foreground mt-4 uppercase tracking-widest">Verified Status</p>
              </CardContent>
           </Card>
 
-          <Card className="glass-card border-none">
+          <Card className="glass-card border-none shadow-lg">
             <CardContent className="pt-6 space-y-4">
                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-primary" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Joined EcoPulse</p>
-                    <p className="font-headline font-bold text-foreground">
-                      {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
+                    <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Joined EcoPulse</p>
+                    <p className="font-headline font-bold text-foreground text-sm">
+                      {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'March 2024'}
                     </p>
                   </div>
                </div>

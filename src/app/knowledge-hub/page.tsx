@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import Link from 'next/link';
 
 const EDUCATIONAL_TOPICS = [
   {
@@ -86,11 +87,11 @@ export default function KnowledgeHubPage() {
       </header>
 
       <Tabs defaultValue="educational" className="w-full">
-        <TabsList className="bg-black/5 p-1.5 rounded-2xl h-auto mb-10 inline-flex border border-black/5">
-          <TabsTrigger value="educational" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl h-auto mb-10 inline-flex border border-black/5">
+          <TabsTrigger value="educational" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
              <BookOpen className="mr-2 h-5 w-5" /> Educational Library
           </TabsTrigger>
-          <TabsTrigger value="personalized" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="personalized" className="py-3 px-8 rounded-xl font-headline text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
              <Sparkles className="mr-2 h-5 w-5" /> Personalized Impact
           </TabsTrigger>
         </TabsList>
@@ -98,7 +99,7 @@ export default function KnowledgeHubPage() {
         <TabsContent value="educational" className="animate-in fade-in duration-700">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {EDUCATIONAL_TOPICS.map((topic, i) => (
-              <Card key={i} className="glass-card border-none hover:bg-black/5 transition-all cursor-pointer group flex flex-col hover:-translate-y-1">
+              <Card key={i} className="glass-card border-none hover:bg-white/60 transition-all cursor-pointer group flex flex-col hover:-translate-y-1 shadow-lg">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-primary/10 rounded-2xl group-hover:bg-primary/20 transition-colors">
@@ -106,11 +107,11 @@ export default function KnowledgeHubPage() {
                     </div>
                     <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary">{topic.readTime}</Badge>
                   </div>
-                  <Badge variant="secondary" className="w-fit text-[10px] uppercase mb-2 bg-black/5 border-black/5 text-muted-foreground">{topic.category}</Badge>
+                  <Badge variant="secondary" className="w-fit text-[10px] uppercase mb-2 bg-black/5 border-black/5 text-muted-foreground font-bold">{topic.category}</Badge>
                   <CardTitle className="font-headline text-2xl group-hover:text-primary transition-colors text-foreground">{topic.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1">
-                  <p className="text-muted-foreground leading-relaxed">{topic.desc}</p>
+                  <p className="text-muted-foreground leading-relaxed text-sm">{topic.desc}</p>
                 </CardContent>
                 <CardContent className="pt-0">
                    <Button variant="ghost" className="w-full justify-between text-primary font-bold px-0 hover:bg-transparent group/btn">
@@ -125,17 +126,17 @@ export default function KnowledgeHubPage() {
         <TabsContent value="personalized" className="animate-in fade-in duration-700">
           {latestRecord ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="glass-card border-none bg-primary/5 border border-primary/10">
+              <Card className="glass-card border-none bg-primary/5 border border-primary/10 shadow-xl">
                 <CardHeader>
                   <CardTitle className="font-headline text-2xl flex items-center gap-3 text-foreground">
                     <TrendingDown className="h-7 w-7 text-primary" />
                     Impact Breakdown
                   </CardTitle>
-                  <CardDescription>Generated from your audit on {new Date(latestRecord.timestamp).toLocaleDateString()}</CardDescription>
+                  <CardDescription className="text-muted-foreground">Generated from your audit on {new Date(latestRecord.timestamp).toLocaleDateString()}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8 pt-4">
-                  <div className="p-6 rounded-3xl bg-background/40 border border-black/5 text-center">
-                    <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Footprint</p>
+                  <div className="p-6 rounded-3xl bg-white/40 border border-black/5 text-center shadow-inner">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Footprint</p>
                     <p className="text-6xl font-headline font-bold text-primary">{latestRecord.totalEmissions.toFixed(1)} <span className="text-xl">kgCO2e</span></p>
                   </div>
                   <div className="space-y-6">
@@ -153,7 +154,7 @@ export default function KnowledgeHubPage() {
               </Card>
 
               <div className="space-y-8">
-                <Card className="glass-card border-none border border-primary/20 relative overflow-hidden h-fit">
+                <Card className="glass-card border-none relative overflow-hidden h-fit shadow-xl">
                   <div className="absolute top-0 right-0 p-8 opacity-5">
                     <Sparkles className="h-32 w-32 text-primary" />
                   </div>
@@ -171,23 +172,23 @@ export default function KnowledgeHubPage() {
                       }
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="p-5 rounded-2xl bg-black/5 space-y-2">
-                          <p className="text-xs font-bold uppercase tracking-widest text-primary">Top Action</p>
-                          <p className="font-bold text-foreground">Renewable Switch</p>
-                          <Badge className="bg-primary/20 text-primary border-none">High Impact</Badge>
+                       <div className="p-5 rounded-2xl bg-white/40 border border-black/5 space-y-2 shadow-sm">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Top Action</p>
+                          <p className="font-bold text-foreground text-sm">Renewable Switch</p>
+                          <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold">High Impact</Badge>
                        </div>
-                       <div className="p-5 rounded-2xl bg-black/5 space-y-2">
-                          <p className="text-xs font-bold uppercase tracking-widest text-accent">Efficiency</p>
-                          <p className="font-bold text-foreground">Smart Heating</p>
-                          <Badge className="bg-accent/20 text-accent border-none">Med Impact</Badge>
+                       <div className="p-5 rounded-2xl bg-white/40 border border-black/5 space-y-2 shadow-sm">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Efficiency</p>
+                          <p className="font-bold text-foreground text-sm">Smart Heating</p>
+                          <Badge className="bg-accent/20 text-accent border-none text-[9px] font-bold">Med Impact</Badge>
                        </div>
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="glass-card border-none bg-secondary/20">
-                   <CardHeader>
-                     <CardTitle className="font-headline text-xl text-foreground">Future Projection</CardTitle>
+                <Card className="glass-card border-none bg-secondary/30 shadow-md">
+                   <CardHeader className="py-4">
+                     <CardTitle className="font-headline text-lg text-foreground">Future Projection</CardTitle>
                    </CardHeader>
                    <CardContent>
                       <p className="text-muted-foreground text-sm leading-relaxed">
@@ -198,16 +199,16 @@ export default function KnowledgeHubPage() {
               </div>
             </div>
           ) : (
-            <Card className="glass-card border-none text-center py-24">
+            <Card className="glass-card border-none text-center py-24 shadow-2xl">
               <CardContent className="space-y-6">
-                <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mx-auto">
-                  <Sparkles className="h-10 w-10 text-muted-foreground opacity-30" />
+                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-4 ring-primary/5">
+                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-headline font-bold text-foreground">Insights Locked</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">Complete your first impact audit to unlock hyper-personalized carbon analysis and reduction strategies.</p>
+                  <p className="text-muted-foreground max-w-sm mx-auto text-sm">Complete your first impact audit to unlock hyper-personalized carbon analysis and reduction strategies.</p>
                 </div>
-                <Button asChild className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
+                <Button asChild className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
                   <Link href="/calculator">Start Impact Audit</Link>
                 </Button>
               </CardContent>

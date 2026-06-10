@@ -40,7 +40,6 @@ export default function CalculatorPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Form states
   const [transport, setTransport] = useState({ car: 0, bus: 0, train: 0, bike: 0 });
   const [energy, setEnergy] = useState({ electricity: 0, gas: 0 });
   const [food, setFood] = useState('mixed');
@@ -64,39 +63,35 @@ export default function CalculatorPage() {
     const newScore = Math.max(10, Math.min(100, 100 - (totalEmissions / 50)));
 
     if (user && db) {
-      try {
-        addDoc(collection(db, 'calculator_records'), {
-          userId: user.uid,
-          totalEmissions,
-          breakdown: {
-            transportation: transportTotal,
-            homeEnergy: energyTotal,
-            food: foodImpact,
-            lifestyle: lifestyleImpact
-          },
-          timestamp: new Date().toISOString()
-        });
+      addDoc(collection(db, 'calculator_records'), {
+        userId: user.uid,
+        totalEmissions,
+        breakdown: {
+          transportation: transportTotal,
+          homeEnergy: energyTotal,
+          food: foodImpact,
+          lifestyle: lifestyleImpact
+        },
+        timestamp: new Date().toISOString()
+      });
 
-        updateDoc(doc(db, 'users', user.uid), {
-          greenPoints: increment(pointsEarned),
-          sustainabilityScore: newScore,
-        });
+      updateDoc(doc(db, 'users', user.uid), {
+        greenPoints: increment(pointsEarned),
+        sustainabilityScore: newScore,
+      });
 
-        addDoc(collection(db, 'activities'), {
-          userId: user.uid,
-          type: 'calculation',
-          description: `Completed Impact Audit: ${totalEmissions.toFixed(0)} kgCO2e`,
-          pointsEarned,
-          timestamp: new Date().toISOString()
-        });
+      addDoc(collection(db, 'activities'), {
+        userId: user.uid,
+        type: 'calculation',
+        description: `Completed Impact Audit: ${totalEmissions.toFixed(0)} kgCO2e`,
+        pointsEarned,
+        timestamp: new Date().toISOString()
+      });
 
-        toast({
-          title: "Calculation Saved!",
-          description: `You've earned ${pointsEarned} Green Points.`,
-        });
-      } catch (e) {
-        console.error(e);
-      }
+      toast({
+        title: "Calculation Saved!",
+        description: `You've earned ${pointsEarned} Green Points.`,
+      });
     }
 
     setTimeout(() => {
@@ -131,7 +126,7 @@ export default function CalculatorPage() {
             </div>
             <div>
               <CardTitle className="font-headline text-2xl">{steps[currentStep].title}</CardTitle>
-              <CardDescription className="text-base">Provide accurate estimates for a better analysis.</CardDescription>
+              <CardDescription className="text-base text-muted-foreground">Provide accurate estimates for a better analysis.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -140,20 +135,20 @@ export default function CalculatorPage() {
           {currentStep === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Personal Car (km/week)</Label>
-                <Input type="number" value={transport.car} onChange={e => setTransport({...transport, car: Number(e.target.value)})} className="bg-black/5 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Personal Car (km/week)</Label>
+                <Input type="number" value={transport.car} onChange={e => setTransport({...transport, car: Number(e.target.value)})} className="bg-white/40 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
               </div>
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bus / Coach (km/week)</Label>
-                <Input type="number" value={transport.bus} onChange={e => setTransport({...transport, bus: Number(e.target.value)})} className="bg-black/5 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bus / Coach (km/week)</Label>
+                <Input type="number" value={transport.bus} onChange={e => setTransport({...transport, bus: Number(e.target.value)})} className="bg-white/40 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
               </div>
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Train / Subway (km/week)</Label>
-                <Input type="number" value={transport.train} onChange={e => setTransport({...transport, train: Number(e.target.value)})} className="bg-black/5 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Train / Subway (km/week)</Label>
+                <Input type="number" value={transport.train} onChange={e => setTransport({...transport, train: Number(e.target.value)})} className="bg-white/40 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
               </div>
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bicycle / Walking (km/week)</Label>
-                <Input type="number" value={transport.bike} onChange={e => setTransport({...transport, bike: Number(e.target.value)})} className="bg-black/5 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bicycle / Walking (km/week)</Label>
+                <Input type="number" value={transport.bike} onChange={e => setTransport({...transport, bike: Number(e.target.value)})} className="bg-white/40 border-black/5 h-12 text-lg focus-visible:ring-primary/20" />
               </div>
             </div>
           )}
@@ -161,13 +156,13 @@ export default function CalculatorPage() {
           {currentStep === 1 && (
             <div className="space-y-8 max-w-xl mx-auto">
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Electricity usage (kWh/month)</Label>
-                <Input type="number" value={energy.electricity} onChange={e => setEnergy({...energy, electricity: Number(e.target.value)})} className="bg-black/5 border-black/5 h-14 text-xl focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Electricity usage (kWh/month)</Label>
+                <Input type="number" value={energy.electricity} onChange={e => setEnergy({...energy, electricity: Number(e.target.value)})} className="bg-white/40 border-black/5 h-14 text-xl focus-visible:ring-primary/20" />
                 <p className="text-xs text-muted-foreground">Average household: 250-400 kWh</p>
               </div>
               <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Gas usage (m³/month)</Label>
-                <Input type="number" value={energy.gas} onChange={e => setEnergy({...energy, gas: Number(e.target.value)})} className="bg-black/5 border-black/5 h-14 text-xl focus-visible:ring-primary/20" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gas usage (m³/month)</Label>
+                <Input type="number" value={energy.gas} onChange={e => setEnergy({...energy, gas: Number(e.target.value)})} className="bg-white/40 border-black/5 h-14 text-xl focus-visible:ring-primary/20" />
               </div>
             </div>
           )}
@@ -183,7 +178,7 @@ export default function CalculatorPage() {
                 ].map(f => (
                   <div key={f.id} className="relative">
                     <RadioGroupItem value={f.id} id={f.id} className="peer sr-only" />
-                    <Label htmlFor={f.id} className="flex flex-col p-6 rounded-2xl border-2 border-black/5 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-black/5">
+                    <Label htmlFor={f.id} className="flex flex-col p-6 rounded-2xl border-2 border-black/5 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all hover:bg-white/60">
                       <span className="font-bold text-lg mb-1 text-foreground">{f.label}</span>
                       <span className="text-sm text-muted-foreground">{f.desc}</span>
                     </Label>
@@ -201,7 +196,7 @@ export default function CalculatorPage() {
                    {['minimal', 'medium', 'heavy'].map(opt => (
                      <div key={opt}>
                        <RadioGroupItem value={opt} id={`shop-${opt}`} className="peer sr-only" />
-                       <Label htmlFor={`shop-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-black/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all">
+                       <Label htmlFor={`shop-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-black/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all hover:bg-white/40">
                          {opt}
                        </Label>
                      </div>
@@ -214,7 +209,7 @@ export default function CalculatorPage() {
                    {['low', 'medium', 'high'].map(opt => (
                      <div key={opt}>
                        <RadioGroupItem value={opt} id={`waste-${opt}`} className="peer sr-only" />
-                       <Label htmlFor={`waste-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-black/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all">
+                       <Label htmlFor={`waste-${opt}`} className="flex items-center justify-center py-4 rounded-xl border border-black/10 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground capitalize cursor-pointer font-bold transition-all hover:bg-white/40">
                          {opt}
                        </Label>
                      </div>
@@ -253,15 +248,15 @@ export default function CalculatorPage() {
 
         {currentStep < 4 && (
           <CardFooter className="flex justify-between border-t border-black/5 p-8 bg-background/40">
-            <Button variant="ghost" onClick={prevStep} disabled={currentStep === 0 || loading} className="h-12 px-6 rounded-xl hover:bg-black/5">
+            <Button variant="ghost" onClick={prevStep} disabled={currentStep === 0 || loading} className="h-12 px-6 rounded-xl hover:bg-white/40 text-foreground font-bold">
               <ArrowLeft className="mr-2 h-5 w-5" /> Previous
             </Button>
             {currentStep === 3 ? (
-              <Button onClick={handleCalculate} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
+              <Button onClick={handleCalculate} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold shadow-md shadow-primary/20">
                 {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Finalize Audit'}
               </Button>
             ) : (
-              <Button onClick={nextStep} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold">
+              <Button onClick={nextStep} disabled={loading} className="bg-primary text-primary-foreground h-12 px-10 rounded-xl font-bold shadow-md shadow-primary/20">
                 Continue <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             )}
