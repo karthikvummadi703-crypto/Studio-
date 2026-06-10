@@ -14,7 +14,6 @@ import {
   Bike, 
   Footprints, 
   Zap, 
-  Motorcycle, 
   TramFront,
   Sparkles,
   ArrowRight,
@@ -29,6 +28,28 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+// Custom SVG for Motorcycle as it doesn't exist in Lucide
+const MotorcycleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="7" cy="15" r="3" />
+    <circle cx="18" cy="15" r="3" />
+    <path d="M18 15V8a2 2 0 0 0-2-2H9.5a3 3 0 0 0-3 3v6" />
+    <path d="M9.5 9h5" />
+    <path d="M12 6V3" />
+  </svg>
+);
+
 const TRANSPORT_MODES = [
   { id: 'walking', label: 'Walking', icon: Footprints, co2PerKm: 0, points: 20 },
   { id: 'bicycle', label: 'Bicycle', icon: Bike, co2PerKm: 0, points: 15 },
@@ -36,7 +57,7 @@ const TRANSPORT_MODES = [
   { id: 'train', label: 'Train', icon: Train, co2PerKm: 0.03, points: 10 },
   { id: 'metro', label: 'Metro', icon: TramFront, co2PerKm: 0.02, points: 12 },
   { id: 'car', label: 'Car', icon: Car, co2PerKm: 0.18, points: 2 },
-  { id: 'motorcycle', label: 'Motorcycle', icon: Motorcycle, co2PerKm: 0.1, points: 5 },
+  { id: 'motorcycle', label: 'Motorcycle', icon: MotorcycleIcon, co2PerKm: 0.1, points: 5 },
   { id: 'ev', label: 'Electric Vehicle', icon: Zap, co2PerKm: 0.04, points: 8 },
 ];
 
@@ -56,7 +77,7 @@ export default function CalculatorPage() {
   const [saving, setSaving] = useState(false);
   const [activeResult, setActiveResult] = useState<any>(null);
 
-  // Firestore History
+  // Firestore History (just to show last record if any)
   const historyQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(
@@ -76,7 +97,7 @@ export default function CalculatorPage() {
 
     setCalculating(true);
     
-    // Simulating heavy computation/API call
+    // Simulating footprint calculation logic
     setTimeout(() => {
       // Mock distance logic for prototype (random 5-50km)
       const distance = parseFloat((Math.random() * 45 + 5).toFixed(1));
@@ -113,10 +134,11 @@ export default function CalculatorPage() {
       });
 
       // 2. Update User Profile (Points & Score)
-      const newScore = Math.max(10, Math.min(100, 100 - (activeResult.co2 * 2)));
+      // Logic: More points for greener modes, higher score for low emissions
+      const newScoreChange = Math.max(1, 10 - activeResult.co2);
       updateDoc(doc(db, 'users', user.uid), {
         greenPoints: increment(activeResult.points),
-        sustainabilityScore: newScore,
+        sustainabilityScore: increment(newScoreChange),
       });
 
       // 3. Log Activity
@@ -268,10 +290,12 @@ export default function CalculatorPage() {
                 </h3>
                 <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 italic text-sm leading-relaxed text-foreground">
                   {activeResult.mode === 'walking' || activeResult.mode === 'bicycle' 
-                    ? "Outstanding! This journey generated virtually no carbon emissions. You made the most environmentally friendly choice possible."
+                    ? "Outstanding! This journey generated virtually no carbon emissions. You made one of the most environmentally friendly choices possible."
                     : activeResult.impact === 'High' 
                     ? "Consider using public transport for this route. The metro could reduce your carbon footprint by up to 70% compared to a car."
-                    : "You are making a moderate environmental impact. Try combining trips to reduce your overall weekly emissions."
+                    : activeResult.impact === 'Medium'
+                    ? "You are making a moderate environmental impact. Try combining trips to reduce your overall weekly emissions."
+                    : "Great choice! Your journey generated very low emissions."
                   }
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -308,7 +332,7 @@ export default function CalculatorPage() {
           ) : (
             <div className="h-full flex flex-col">
               <Card className="glass-card border-none flex-1 flex flex-col items-center justify-center text-center p-12 rounded-[2.5rem] space-y-6">
-                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center ring-8 ring-primary/5">
+                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5">
                   <CalculatorIcon className="h-10 w-10 text-primary/40" />
                 </div>
                 <div className="space-y-2">
@@ -318,27 +342,6 @@ export default function CalculatorPage() {
                   </p>
                 </div>
               </Card>
-              
-              {recentRecords && recentRecords.length > 0 && (
-                <div className="mt-8 space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4">Last Audit</p>
-                  <div className="glass-card border-none p-4 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        {(() => {
-                          const RecordIcon = TRANSPORT_MODES.find(m => m.id === recentRecords[0].mode)?.icon || Car;
-                          return <RecordIcon className="h-4 w-4" />;
-                        })()}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold">{recentRecords[0].start} to {recentRecords[0].destination}</p>
-                        <p className="text-[9px] text-muted-foreground uppercase">{recentRecords[0].distance}km journey</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-[10px] text-primary">{recentRecords[0].co2}kg CO2</Badge>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
