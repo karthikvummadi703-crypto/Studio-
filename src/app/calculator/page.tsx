@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,14 +15,11 @@ import {
   Footprints, 
   Zap, 
   TramFront,
-  Check,
-  X,
   Loader2,
-  Info,
   MapPin,
   Navigation
 } from 'lucide-react';
-import { collection, doc, updateDoc, increment, addDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, increment } from 'firebase/firestore';
 import { useUser, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -32,7 +30,7 @@ const TRANSPORT_MODES = [
   { id: 'bus', label: 'Bus', icon: Bus, co2PerKm: 0.05, points: 10 },
   { id: 'train', label: 'Train', icon: Train, co2PerKm: 0.03, points: 10 },
   { id: 'metro', label: 'Metro', icon: TramFront, co2PerKm: 0.02, points: 12 },
-  { id: 'car', label: 'Car', icon: 0.18, points: 2 },
+  { id: 'car', label: 'Car', icon: Car, co2PerKm: 0.18, points: 2 },
   { id: 'motorcycle', label: 'Motorcycle', icon: ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="15" r="3" /><circle cx="18" cy="15" r="3" /><path d="M18 15V8a2 2 0 0 0-2-2H9.5a3 3 0 0 0-3 3v6" /><path d="M9.5 9h5" /><path d="M12 6V3" /></svg>
   ), co2PerKm: 0.1, points: 5 },
@@ -63,7 +61,6 @@ export default function CalculatorPage() {
 
     setCalculating(true);
     
-    // Optimized simulation delay for better UX
     setTimeout(() => {
       const distance = parseFloat((Math.random() * 45 + 5).toFixed(1));
       const mode = TRANSPORT_MODES.find(m => m.id === selectedMode)!;
@@ -82,7 +79,7 @@ export default function CalculatorPage() {
         timestamp: new Date().toISOString()
       });
       setCalculating(false);
-    }, 400);
+    }, 100);
   }, [start, destination, selectedMode, toast]);
 
   const handleSave = async () => {
@@ -90,22 +87,28 @@ export default function CalculatorPage() {
     setSaving(true);
 
     try {
+      const batch = writeBatch(db);
+      
+      const recordRef = doc(collection(db, 'calculator_records'));
+      batch.set(recordRef, { ...activeResult, userId: user.uid });
+
       const userRef = doc(db, 'users', user.uid);
       const scoreChange = Math.max(1, Math.min(10, 10 - activeResult.co2));
-
-      // Optimistic writes (no await for background sync)
-      addDoc(collection(db, 'calculator_records'), { ...activeResult, userId: user.uid });
-      updateDoc(userRef, {
+      batch.update(userRef, {
         greenPoints: increment(activeResult.points),
         sustainabilityScore: increment(scoreChange),
       });
-      addDoc(collection(db, 'activities'), {
+
+      const activityRef = doc(collection(db, 'activities'));
+      batch.set(activityRef, {
         userId: user.uid,
         type: 'calculation',
         description: `Logged journey: ${activeResult.start} → ${activeResult.destination}`,
         pointsEarned: activeResult.points,
         timestamp: new Date().toISOString()
       });
+
+      await batch.commit();
 
       toast({ title: "Audit Synchronized", description: "Environmental telemetry updated successfully." });
       setActiveResult(null);
@@ -125,7 +128,7 @@ export default function CalculatorPage() {
         <p className="text-muted-foreground text-sm max-w-md mx-auto font-medium">Verify your transportation footprint with real-time telemetry verification.</p>
       </header>
 
-      <Card className="bg-white/40 backdrop-blur-xl border-white/60 shadow-2xl rounded-[2.5rem] overflow-hidden">
+      <Card className="bg-white/90 border-white/60 shadow-2xl rounded-[2.5rem] overflow-hidden">
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
@@ -166,7 +169,7 @@ export default function CalculatorPage() {
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2 group",
                     selectedMode === mode.id 
                       ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                      : "bg-white/40 border-white/40 text-zinc-500 hover:bg-white/60"
+                      : "bg-white border-white text-zinc-500 hover:bg-white/60"
                   )}
                 >
                   {typeof mode.icon === 'function' ? <mode.icon className="h-5 w-5" /> : <Car className="h-5 w-5" />}
@@ -188,7 +191,7 @@ export default function CalculatorPage() {
 
       {activeResult && (
         <section className="space-y-8 animate-in slide-in-from-bottom-6 duration-700 pb-10">
-          <Card className="bg-white/60 backdrop-blur-2xl border-white/80 shadow-2xl rounded-[2.5rem] overflow-hidden">
+          <Card className="bg-white/90 border-white/80 shadow-2xl rounded-[2.5rem] overflow-hidden">
             <div className="p-10 space-y-10">
               <div className="flex justify-between items-center">
                 <h3 className="font-headline font-bold text-2xl tracking-tight italic">Audit Verification</h3>

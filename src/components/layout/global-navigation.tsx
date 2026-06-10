@@ -1,62 +1,57 @@
 
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MoreHorizontal, Bell, Search, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { FloatingAIAdvisor } from '@/components/ai/floating-advisor';
 import { usePathname, useRouter } from 'next/navigation';
 
+const FloatingAIAdvisor = dynamic(
+  () => import('@/components/ai/floating-advisor').then(m => ({ default: m.FloatingAIAdvisor })),
+  { ssr: false }
+);
+
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isSidebarOpen, React_setIsSidebarOpen] = React.useState(false);
   const { user, isLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-    console.log('[GlobalNav] Initialized and mounted.');
-  }, []);
 
   const isAuthPage = useMemo(() => {
     return pathname === '/login' || pathname === '/register' || pathname === '/';
   }, [pathname]);
 
   useEffect(() => {
-    if (mounted && !isLoading) {
+    if (!isLoading) {
       if (!user && !isAuthPage) {
-        console.log('[GlobalNav] User unauthenticated, routing to login...');
         router.push('/login');
       } else if (user && isAuthPage) {
-        console.log('[GlobalNav] User authenticated on auth page, routing to dashboard...');
         router.push('/dashboard');
       }
     }
-  }, [mounted, isLoading, user, isAuthPage, router]);
+  }, [isLoading, user, isAuthPage, router]);
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => !prev);
+    React_setIsSidebarOpen((prev) => !prev);
   }, []);
 
   const closeSidebar = useCallback(() => {
-    setIsSidebarOpen(false);
+    React_setIsSidebarOpen(false);
   }, []);
 
   const userInitial = useMemo(() => {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // STABLE SHELL: We always render the same root container to avoid hydration errors.
-  const showNav = mounted && !isAuthPage && user;
+  const showNav = !isAuthPage && user;
 
   return (
-    <div className="flex h-screen overflow-hidden w-full bg-transparent">
-      {/* Sidebar - Positioned fixed/relative in a stable container */}
+    <div className="flex h-screen overflow-hidden w-full bg-transparent" suppressHydrationWarning>
       {showNav && (
         <nav 
           className={cn(
@@ -68,10 +63,9 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         </nav>
       )}
 
-      {/* Main Content Area - Stable container shell */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {showNav && (
-          <header className="h-16 border-b border-black/5 bg-white/40 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
+          <header className="h-16 border-b border-black/5 bg-white/95 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm transition-all">
             <div className="flex items-center gap-6">
               <button 
                 onClick={toggleSidebar}
@@ -111,7 +105,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-transparent">
           <div className={cn(
             "max-w-7xl mx-auto p-4 sm:p-8 pb-24 relative z-10",
-            showNav && "bg-white/10 backdrop-blur-sm min-h-full"
+            showNav && "bg-white/10 min-h-full"
           )}>
             {children}
           </div>
@@ -119,10 +113,9 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Overlay */}
       {showNav && isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40 md:hidden" 
+          className="fixed inset-0 bg-black/10 z-40 md:hidden" 
           onClick={closeSidebar}
         />
       )}

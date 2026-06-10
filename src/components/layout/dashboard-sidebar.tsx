@@ -26,7 +26,7 @@ export function DashboardSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r border-black/5 flex flex-col h-screen bg-white/90 backdrop-blur-2xl">
+    <aside className="w-64 border-r border-black/5 flex flex-col h-screen bg-white">
       <div className="p-8 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onClose}>
           <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">

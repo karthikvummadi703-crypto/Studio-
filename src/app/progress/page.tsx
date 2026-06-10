@@ -2,32 +2,27 @@
 "use client";
 
 import { useMemo, useCallback, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Line,
-} from 'recharts';
-import { Trophy, Milestone, Award, TrendingDown, Sparkles, Target } from 'lucide-react';
+import { Trophy, Milestone, Award, TrendingDown, Sparkles, Target, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> });
+const Area = dynamic(() => import('recharts').then(m => m.Area), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
+const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
 
 export default function ProgressPage() {
   const { user } = useUser();
   const db = useFirestore();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // 1. Strictly Isolated Personal History
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(
@@ -37,17 +32,16 @@ export default function ProgressPage() {
     );
   }, [db, user]);
   
-  const { data: records } = useCollection<any>(recordsQuery);
+  const { data: records, isLoading } = useCollection<any>(recordsQuery);
 
-  // 2. Optimized Chart Data
   const chartData = useMemo(() => {
-    if (!records?.length || !mounted) return [];
+    if (!records?.length) return [];
     return records.map((r: any) => ({
       date: new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       emissions: Number(r.co2 || 0).toFixed(2),
-      goal: 1.5 // Personal reduction target baseline
+      goal: 1.5
     }));
-  }, [records, mounted]);
+  }, [records]);
 
   const hasData = useMemo(() => chartData.length > 0, [chartData]);
 
@@ -68,7 +62,11 @@ export default function ProgressPage() {
     </div>
   ), []);
 
-  if (!mounted) return null;
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 className="h-10 w-10 text-primary animate-spin" />
+    </div>
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-20 animate-in fade-in duration-1000">
@@ -81,7 +79,7 @@ export default function ProgressPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <Card className="lg:col-span-2 bg-white/80 backdrop-blur-md border-zinc-200 shadow-2xl rounded-[3rem] overflow-hidden group">
+        <Card className="lg:col-span-2 bg-white/90 border-zinc-200 shadow-2xl rounded-[3rem] overflow-hidden group">
           <CardHeader className="p-12 border-b border-zinc-50 flex flex-row items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="font-headline text-3xl tracking-tight">Carbon Evolution</CardTitle>
@@ -127,7 +125,6 @@ export default function ProgressPage() {
                     cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                      backdropFilter: 'blur(16px)',
                       border: '1px solid rgba(0,0,0,0.05)', 
                       borderRadius: '24px',
                       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)',
@@ -182,9 +179,8 @@ export default function ProgressPage() {
             <CardContent className="px-0 space-y-5">
                <Achievement icon={Award} title="Verified Auditor" date="SYNCED" color="text-primary" active={hasData} />
                <Achievement icon={Milestone} title="10KG REDUCED" date="UPCOMING" color="text-emerald-500" />
-               <Achievement icon={Sparkles} title="AI STRATEGIST" date="ACTIVE" color="text-primary" active />
+               <Achievement icon={Sparkles} title="AI STRATEGIST" date="ACTIVE" color="text-primary" active={true} />
             </CardContent>
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/10 blur-[80px] rounded-full" aria-hidden="true" />
           </Card>
         </aside>
       </div>

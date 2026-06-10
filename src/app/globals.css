@@ -1,10 +1,10 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Premium High-Contrast Eco Theme */
     --background: 140 60% 99%;
     --foreground: 145 50% 10%;
     --card: 0 0% 100%;
@@ -33,19 +33,20 @@
     @apply border-border focus-visible:ring-primary/40 focus-visible:ring-offset-2 outline-none;
   }
   body {
-    @apply text-foreground bg-transparent;
+    @apply text-foreground;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%);
+    min-height: 100vh;
     font-feature-settings: "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
   }
 }
 
-/* Accessibility: Clear focus states */
 :focus-visible {
   @apply ring-2 ring-primary ring-offset-background;
 }
 
 .glass-card {
-  @apply bg-white/50 backdrop-blur-xl border border-white/40 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.08)] transition-all duration-300;
+  @apply bg-white/90 border border-white/40 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.08)] transition-all duration-300;
 }
 
 .emerald-glow {
@@ -56,12 +57,10 @@
   @apply bg-primary text-white shadow-xl shadow-primary/25 border-none scale-[1.02];
 }
 
-/* Performance: Optimized transitions */
 .transition-all {
   will-change: transform, opacity;
 }
 
-/* Custom Scrollbar Performance */
 ::-webkit-scrollbar {
   width: 10px;
 }

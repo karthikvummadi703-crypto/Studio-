@@ -1,64 +1,34 @@
+
 "use client";
 
-import { useMemo, useState, useEffect } from 'react';
-import { useUser, useDoc, useCollection, useFirestore } from '@/firebase';
-import { doc, query, collection, limit, where, orderBy } from 'firebase/firestore';
+import { useMemo } from 'react';
+import { useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Leaf, 
-  Zap, 
   TrendingDown, 
-  Trophy, 
-  ArrowRight, 
-  CheckCircle2, 
   Calculator, 
   Sparkles,
-  Info
+  Info,
+  ArrowRight,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { CHALLENGES } from '@/lib/challenges';
 import { getLevelFromPoints } from '@/lib/levels';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
 
 export default function Dashboard() {
   const { user } = useUser();
   const db = useFirestore();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { profile, records, isLoading } = useDashboardData(user?.uid, db);
 
-  // 1. Memoized Data Queries
-  const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
-  const { data: profile } = useDoc<any>(profileRef);
-
-  const activitiesQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'activities'), 
-      where('userId', '==', user.uid), 
-      orderBy('timestamp', 'desc'),
-      limit(5)
-    );
-  }, [db, user]);
-  const { data: activities } = useCollection<any>(activitiesQuery);
-
-  const recordsQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'calculator_records'), 
-      where('userId', '==', user.uid), 
-      orderBy('timestamp', 'desc'),
-      limit(10)
-    );
-  }, [db, user]);
-  const { data: records } = useCollection<any>(recordsQuery);
-
-  // 2. Optimized Derived State
   const stats = useMemo(() => {
     const points = profile?.greenPoints || 0;
     const score = profile?.sustainabilityScore || 0;
@@ -80,16 +50,7 @@ export default function Dashboard() {
     return CHALLENGES.find(c => !completedIds.includes(c.id)) || null;
   }, [profile]);
 
-  const formattedDate = useMemo(() => {
-    if (!mounted) return "";
-    return new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric'
-    });
-  }, [mounted]);
-
-  if (!mounted) return (
+  if (isLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <Loader2 className="h-10 w-10 text-primary animate-spin" />
     </div>
@@ -97,16 +58,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Header Section */}
       <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1">
           <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.3em]">Strategy Node Alpha</p>
           <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
             {profile?.fullName || user?.displayName || 'Eco Explorer'}
           </h1>
-          <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
-            {formattedDate}
-          </p>
         </div>
         <div className="flex gap-4">
            <Link href="/calculator">
@@ -117,8 +74,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Sustainability Metrics Hero */}
-      <section className="bg-white/20 backdrop-blur-xl rounded-[2.5rem] p-10 relative overflow-hidden border border-white/40 shadow-2xl">
+      <section className="bg-white/90 rounded-[2.5rem] p-10 relative overflow-hidden border border-white/40 shadow-2xl">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-12 items-center">
           <div className="lg:col-span-3 space-y-10">
             <div className="flex items-center gap-4">
@@ -159,7 +115,7 @@ export default function Dashboard() {
         <EmptyState />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-2 bg-white/40 backdrop-blur-xl border-white/60 rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between shadow-xl">
+          <Card className="lg:col-span-2 bg-white/90 border-white/60 rounded-[2rem] overflow-hidden p-8 flex flex-col justify-between shadow-xl">
             {activeChallenge ? (
               <>
                 <CardHeader className="p-0 mb-8">
@@ -213,18 +169,11 @@ export default function Dashboard() {
                    Based on your last audit of <span className="text-primary font-bold">{stats.latestCO2}kg</span>, switching your next commute to a <span className="text-white font-bold">Bicycle</span> will increase your score by <span className="text-emerald-400 font-bold">+8%</span>.
                  </p>
                </div>
-               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full" />
             </Card>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-function Loader2({ className }: { className?: string }) {
-  return (
-    <svg className={cn("animate-spin", className)} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
   );
 }
 
@@ -244,7 +193,7 @@ function HeroMetric({ label, value, subValue, color, isSmall }: any) {
 
 function KPICard({ label, value, unit, icon: Icon, color }: any) {
   return (
-    <div className="bg-white/40 backdrop-blur-xl rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white/60 border border-white/40 shadow-xl">
+    <div className="bg-white/90 rounded-2xl p-6 flex items-center justify-between group transition-all hover:bg-white border border-white/40 shadow-xl">
        <div className="space-y-1">
           <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
           <div className="flex items-baseline gap-2">
@@ -261,7 +210,7 @@ function KPICard({ label, value, unit, icon: Icon, color }: any) {
 
 function EmptyState() {
   return (
-    <Card className="bg-white/40 backdrop-blur-xl border-white/60 rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+    <Card className="bg-white/90 border-white/60 rounded-[2.5rem] p-12 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
       <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto ring-8 ring-primary/5">
         <Sparkles className="h-10 w-10 text-primary animate-pulse" />
       </div>
