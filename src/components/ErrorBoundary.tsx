@@ -1,59 +1,58 @@
-"use client";
+'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { AlertCircle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-interface Props {
-  children: ReactNode;
-}
+import React from 'react';
+import { Leaf, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  message: string;
 }
 
 /**
- * ErrorBoundary catches render errors in its child component tree
- * and displays a fallback UI instead of crashing the entire app.
+ * A robust Error Boundary component to catch and recover from UI-level crashes.
  */
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallbackMessage?: string },
+  State
+> {
+  constructor(props: { children: React.ReactNode; fallbackMessage?: string }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Fail silently in production to avoid blocking main thread
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, message: error.message };
   }
 
-  public render() {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Log errors to a service in production if needed
+    console.error('[ErrorBoundary]', error, info);
+  }
+
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[400px] w-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-          <div className="p-4 bg-red-50 rounded-full">
-            <AlertCircle className="h-12 w-12 text-red-500" />
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-6 p-8 text-center animate-fade-in">
+          <div className="p-4 bg-red-50 rounded-2xl shadow-sm border border-red-100">
+            <Leaf className="h-10 w-10 text-red-400" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-headline font-bold text-foreground">Something went wrong</h2>
-            <p className="text-zinc-600 max-w-md mx-auto">
-              Our environmental node encountered an unexpected state. Try refreshing the page.
+            <h2 className="text-xl font-headline font-bold text-foreground tracking-tight">Something went wrong</h2>
+            <p className="text-sm text-muted-foreground max-w-sm font-medium">
+              {this.props.fallbackMessage || 'An unexpected error occurred in this environmental node. Please try again.'}
             </p>
           </div>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="rounded-xl px-8 py-6 font-bold"
+          <Button
+            onClick={() => this.setState({ hasError: false, message: '' })}
+            className="rounded-xl font-bold px-8 shadow-lg transition-transform hover:scale-105"
+            variant="outline"
           >
-            <RotateCcw className="mr-2 h-4 w-4" /> Reload Strategy Node
+            <RefreshCw className="h-4 w-4 mr-2" /> Try Again
           </Button>
         </div>
       );
     }
-
     return this.props.children;
   }
 }
