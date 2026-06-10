@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow for the EcoPulse AI Advisor chat.
+ * @fileOverview A fast, optimized Genkit flow for the EcoPulse AI Advisor.
  *
- * - aiAdvisorChat - A function that handles the conversational AI advisor logic.
+ * - aiAdvisorChat - High-speed conversational AI consultant.
  */
 
 import { ai } from '@/ai/genkit';
@@ -15,24 +15,22 @@ const MessageSchema = z.object({
 });
 
 const AIAdvisorChatInputSchema = z.object({
-  history: z.array(MessageSchema).describe('The conversation history.'),
-  userInput: z.string().describe('The user\'s latest question or input.'),
+  history: z.array(MessageSchema).describe('Recent chat history.'),
+  userInput: z.string().describe('User input.'),
   userContext: z.object({
     points: z.number(),
     score: z.number(),
     level: z.string(),
     challengesCompleted: z.number(),
-  }).describe('The user\'s current sustainability profile.'),
+  }).describe('User sustainability stats.'),
 });
-export type AIAdvisorChatInput = z.infer<typeof AIAdvisorChatInputSchema>;
 
 const AIAdvisorChatOutputSchema = z.object({
-  responseText: z.string().describe('The AI\'s response text.'),
-  suggestedTitle: z.string().optional().describe('A suggested title for the conversation (only for first message).'),
+  responseText: z.string().describe('Concise, fast response.'),
+  suggestedTitle: z.string().optional().describe('Short title.'),
 });
-export type AIAdvisorChatOutput = z.infer<typeof AIAdvisorChatOutputSchema>;
 
-export async function aiAdvisorChat(input: AIAdvisorChatInput): Promise<AIAdvisorChatOutput> {
+export async function aiAdvisorChat(input: z.infer<typeof AIAdvisorChatInputSchema>): Promise<z.infer<typeof AIAdvisorChatOutputSchema>> {
   return aiAdvisorChatFlow(input);
 }
 
@@ -40,23 +38,25 @@ const prompt = ai.definePrompt({
   name: 'aiAdvisorChatPrompt',
   input: { schema: AIAdvisorChatInputSchema },
   output: { schema: AIAdvisorChatOutputSchema },
-  prompt: `You are the EcoPulse AI Advisor, a professional sustainability consultant.
-Your goal is to provide personalized, actionable, and motivating advice to users to help them reduce their carbon footprint.
+  config: {
+    temperature: 0.7,
+  },
+  prompt: `You are EcoPulse AI, a high-performance sustainability consultant. 
+Keep responses concise, professional, and extremely actionable.
 
-User Profile:
-- Green Points: {{{userContext.points}}}
-- Sustainability Score: {{{userContext.score}}}
+User Status:
+- Score: {{{userContext.score}}}
 - Level: {{{userContext.level}}}
-- Challenges Completed: {{{userContext.challengesCompleted}}}
+- Points: {{{userContext.points}}}
 
-Conversation History:
+History:
 {{#each history}}
 - {{role}}: {{text}}
 {{/each}}
 
-Latest User Input: {{{userInput}}}
+User Question: {{{userInput}}}
 
-Analyze the user's situation and provide a helpful response. If this is the start of a conversation, suggest a brief, relevant title for this chat (e.g., "Transportation Strategy"). Be encouraging and use the user's metrics to make the advice feel specific.`,
+Respond now. If new chat, provide a short title.`,
 });
 
 const aiAdvisorChatFlow = ai.defineFlow(
