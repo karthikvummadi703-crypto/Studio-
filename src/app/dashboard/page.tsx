@@ -18,11 +18,6 @@ import {
   Calculator, 
   Activity as ActivityIcon,
   Sparkles,
-  Info,
-  Calendar,
-  Footprints,
-  Bus,
-  ShoppingBag
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -44,17 +39,26 @@ export default function Dashboard() {
 
   const activitiesQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'activities'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'), limit(5));
+    // We limit to simple filtering first to avoid indexing errors for new users
+    return query(
+      collection(db, 'activities'), 
+      where('userId', '==', user.uid), 
+      limit(5)
+    );
   }, [db, user]);
   const { data: activities } = useCollection<any>(activitiesQuery);
 
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'calculator_records'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'));
+    return query(
+      collection(db, 'calculator_records'), 
+      where('userId', '==', user.uid), 
+      limit(10)
+    );
   }, [db, user]);
   const { data: records } = useCollection<any>(recordsQuery);
 
-  // 2. Derived State (Starting at 0 as per requirements)
+  // 2. Derived State
   const points = profile?.greenPoints || 0;
   const score = profile?.sustainabilityScore || 0;
   const level = getLevelFromPoints(points);
@@ -87,6 +91,8 @@ export default function Dashboard() {
       year: 'numeric' 
     });
   }, [mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000">
@@ -201,70 +207,6 @@ export default function Dashboard() {
               <KPICard label="Completed" value={challengesCompletedCount.toString()} unit="tasks" icon={CheckCircle2} color="text-primary" />
             </div>
           </div>
-
-          {/* Charts Section */}
-          <section className="space-y-6">
-             <div className="flex items-center gap-4 px-4">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">Historical Performance</h2>
-                <div className="flex-1 h-px bg-black/5" />
-             </div>
-             <Card className="glass-card border-none rounded-[2rem] p-12 text-center h-[300px] flex flex-col items-center justify-center space-y-4">
-                <div className="p-4 bg-primary/5 rounded-full"><ActivityIcon className="h-8 w-8 text-muted-foreground" /></div>
-                <h3 className="text-lg font-headline font-bold">Analysis Pending</h3>
-                <p className="text-muted-foreground text-sm max-w-sm">Your visual performance charts will appear here after you complete your first three carbon calculations.</p>
-             </Card>
-          </section>
-
-          {/* Social & Rewards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <section className="space-y-6">
-               <div className="flex items-center gap-4 px-4">
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">Milestone Rewards</h2>
-                  <div className="flex-1 h-px bg-black/5" />
-               </div>
-               <div className="glass-card rounded-[2rem] p-8 grid grid-cols-2 gap-4">
-                  <AchievementCard title="First Audit" locked={!hasData} icon={Calculator} />
-                  <AchievementCard title="First Challenge" locked={challengesCompletedCount === 0} icon={Trophy} />
-                  <AchievementCard title="100 Points" locked={points < 100} icon={Sparkles} />
-                  <AchievementCard title="Eco Veteran" locked={points < 500} icon={Trophy} />
-               </div>
-               {challengesCompletedCount === 0 && (
-                 <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">No achievements unlocked yet.</p>
-               )}
-            </section>
-
-            <section className="space-y-6">
-               <div className="flex items-center gap-4 px-4">
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                  <h2 className="text-[11px] font-bold tracking-[0.3em] uppercase text-muted-foreground">Recent Activity</h2>
-                  <div className="flex-1 h-px bg-black/5" />
-               </div>
-               <div className="glass-card rounded-[2rem] p-8 space-y-6 min-h-[200px] flex flex-col">
-                  {activities && activities.length > 0 ? (
-                    activities.map((act: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between border-b border-black/5 pb-4 last:border-0 last:pb-0">
-                         <div className="flex items-center gap-4">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                               <ActivityIcon className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                               <p className="text-[11px] font-bold text-foreground">{act.description}</p>
-                               <p className="text-[9px] text-muted-foreground uppercase">{mounted && act.timestamp ? new Date(act.timestamp).toLocaleDateString() : '---'}</p>
-                            </div>
-                         </div>
-                         <Badge variant="secondary" className="text-[10px] text-primary bg-primary/5 border-primary/10">+{act.pointsEarned} Pts</Badge>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-                       <p className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-widest">No activities recorded yet.</p>
-                    </div>
-                  )}
-               </div>
-            </section>
-          </div>
         </>
       )}
     </div>
@@ -298,18 +240,6 @@ function KPICard({ label, value, unit, icon: Icon, color }: any) {
        <div className={cn("p-3 rounded-xl bg-black/5 transition-transform group-hover:scale-110", color)}>
           <Icon className="h-6 w-6" />
        </div>
-    </div>
-  );
-}
-
-function AchievementCard({ title, locked, icon: Icon }: any) {
-  return (
-    <div className={cn(
-      "p-4 rounded-2xl flex flex-col items-center justify-center space-y-3 transition-all",
-      locked ? "bg-black/5 opacity-40 grayscale" : "bg-primary/5 border border-primary/20 shadow-sm"
-    )}>
-       <Icon className={cn("h-6 w-6", locked ? "text-muted-foreground" : "text-primary")} />
-       <p className="text-[9px] font-bold uppercase tracking-widest text-center">{title}</p>
     </div>
   );
 }

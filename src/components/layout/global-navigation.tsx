@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -32,8 +33,12 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
     return user?.displayName?.[0] || user?.email?.[0] || 'E';
   }, [user]);
 
-  // Hide navigation on auth pages
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  // Hide navigation on auth pages and root redirecting page
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/';
+
+  if (!mounted) {
+    return <main className="flex-1">{children}</main>;
+  }
 
   if (isAuthPage) {
     return <main className="flex-1">{children}</main>;
@@ -42,7 +47,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden w-full">
       {/* Sidebar Overlay */}
-      {mounted && isSidebarOpen && (
+      {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden transition-opacity" 
           onClick={closeSidebar}
@@ -54,7 +59,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
       <nav 
         className={cn(
           "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
-          mounted && isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+          isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         aria-label="Main Navigation"
       >
@@ -68,7 +73,6 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
               onClick={toggleSidebar}
               className="p-2 hover:bg-primary/10 rounded-full text-primary transition-all flex items-center justify-center focus:ring-2 focus:ring-primary/20 outline-none"
               aria-expanded={isSidebarOpen}
-              aria-controls="main-navigation"
               aria-label="Toggle navigation menu"
             >
               {isSidebarOpen ? <X className="h-6 w-6" /> : <MoreHorizontal className="h-8 w-8" />}
@@ -86,13 +90,11 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
               <Input 
                 placeholder="Search metrics..." 
                 className="pl-9 h-8 bg-white/40 border-primary/10 focus-visible:ring-primary/20 rounded-full text-[10px] shadow-none"
-                aria-label="Search sustainability data"
               />
             </div>
             
             <button 
               className="relative p-2 text-muted-foreground hover:text-primary transition-colors focus:ring-2 focus:ring-primary/20 rounded-full"
-              aria-label="View notifications"
             >
               <Bell className="h-4 w-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border-2 border-white shadow-sm"></span>
