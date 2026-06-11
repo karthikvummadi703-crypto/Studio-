@@ -3,10 +3,10 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Milestone, Award, TrendingDown, Sparkles, Target, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
 
 const AreaChartComponent = dynamic(() => import('@/components/charts/area-chart'), { 
   ssr: false, 
@@ -39,12 +39,7 @@ export default function ProgressPage() {
 
   const recordsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(
-      collection(db, 'calculator_records'), 
-      where('userId', '==', user.uid), 
-      orderBy('timestamp', 'asc'),
-      limit(50)
-    );
+    return buildUserCalculatorRecordsQuery(db, user.uid, { sortOrder: 'asc', limitCount: 50 });
   }, [db, user]);
   
   const { data: records, isLoading } = useCollection<CalculatorRecord>(recordsQuery as any);

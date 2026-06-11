@@ -26,8 +26,9 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
+import { getDocs } from 'firebase/firestore';
 import Link from 'next/link';
+import { buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
 
 const EDUCATIONAL_TOPICS = [
   {
@@ -81,12 +82,7 @@ export default function KnowledgeHubPage() {
   useEffect(() => {
     async function fetchOneTime() {
       if (!db || !user) return;
-      const q = query(
-        collection(db, 'calculator_records'), 
-        where('userId', '==', user.uid),
-        orderBy('timestamp', 'desc'), 
-        limit(1)
-      );
+      const q = buildUserCalculatorRecordsQuery(db, user.uid, { limitCount: 1 });
       const snap = await getDocs(q);
       if (!snap.empty) {
         setLatestRecord(snap.docs[0].data());

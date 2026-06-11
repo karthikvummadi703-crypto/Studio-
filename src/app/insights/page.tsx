@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, Zap, Car, Utensils, ShoppingBag, Send } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { getDocs } from 'firebase/firestore';
 import { GenerateReductionPlanOutput } from '@/ai/flows/generate-reduction-plan';
 import Link from 'next/link';
+import { buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
 
 const InsightCategoryCard = dynamic(() => import('./insight-card'), { ssr: false });
 
@@ -24,12 +24,7 @@ export default function InsightsPage() {
     const controller = new AbortController();
     async function fetchLatest() {
       if (user && db) {
-        const q = query(
-          collection(db, 'calculator_records'),
-          where('userId', '==', user.uid),
-          orderBy('timestamp', 'desc'),
-          limit(1)
-        );
+        const q = buildUserCalculatorRecordsQuery(db, user.uid, { limitCount: 1 });
         const snap = await getDocs(q);
         if (!snap.empty && !controller.signal.aborted) {
           setLatestRecord(snap.docs[0].data());
@@ -88,7 +83,7 @@ export default function InsightsPage() {
           <CardContent className="flex flex-col items-center justify-center py-20 text-center space-y-4">
              <div className="p-4 bg-zinc-50 rounded-full"><Sparkles className="h-10 w-10 text-zinc-400" /></div>
              <p className="text-xl font-headline font-bold">No Data Found</p>
-             <p className="text-zinc-500 max-w-sm">We need at least one carbon calculation to generate personalized insights.</p>
+             <p className="text-zinc-500 max-w-sm"> We need at least one carbon calculation to generate personalized insights.</p>
              <Button asChild variant="outline" className="rounded-xl">
                <Link href="/calculator">Calculate Footprint</Link>
              </Button>

@@ -3,14 +3,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { 
   doc, 
-  query, 
-  collection, 
-  where, 
-  orderBy, 
   Firestore,
   onSnapshot 
 } from 'firebase/firestore';
 import type { UserProfile, AIConversation } from '@/types';
+import { buildUserConversationsQuery } from '@/lib/firestore-queries';
+import { COLLECTIONS } from '@/lib/constants';
 
 interface AdvisorData {
   profile: UserProfile | null;
@@ -19,9 +17,8 @@ interface AdvisorData {
 }
 
 /**
- * Custom hook that batches profile and chat history subscriptions into a single state object.
- * @param userId The current authenticated user ID.
- * @param db The Firestore database instance.
+ * Custom hook that batches profile and chat history subscriptions.
+ * Uses centralized query factory for history telemetry.
  */
 export function useAdvisorData(userId: string | undefined, db: Firestore | undefined): AdvisorData {
   const [data, setData] = useState<AdvisorData>({
@@ -30,14 +27,9 @@ export function useAdvisorData(userId: string | undefined, db: Firestore | undef
     isLoading: true
   });
 
-  // Memoize the query to prevent unnecessary re-subscriptions
   const historyQuery = useMemo(() => {
     if (!userId || !db) return null;
-    return query(
-      collection(db, 'ai_conversations'),
-      where('userId', '==', userId),
-      orderBy('updatedAt', 'desc')
-    );
+    return buildUserConversationsQuery(db, userId);
   }, [userId, db]);
 
   useEffect(() => {
@@ -46,7 +38,7 @@ export function useAdvisorData(userId: string | undefined, db: Firestore | undef
       return;
     }
 
-    const profileRef = doc(db, 'users', userId);
+    const profileRef = doc(db, COLLECTIONS.USERS, userId);
 
     let profileReady = false;
     let chatsReady = false;
