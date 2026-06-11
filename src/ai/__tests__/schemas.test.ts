@@ -5,36 +5,73 @@ import { GenerateReductionPlanInputSchema } from '../flows/generate-reduction-pl
 
 describe('AI Input Schemas', () => {
   describe('AIAdvisorChatInputSchema', () => {
-    it('validates correct input', () => {
-      const valid = {
+    it('validates correct full input', () => {
+      expect(AIAdvisorChatInputSchema.safeParse({
         history: [{ role: 'user', text: 'hi' }],
         userInput: 'how to save energy?',
         userContext: { points: 100, score: 50, level: 'Seedling', challengesCompleted: 1 }
-      };
-      expect(AIAdvisorChatInputSchema.safeParse(valid).success).toBe(true);
+      }).success).toBe(true);
     });
 
-    it('rejects missing history', () => {
-      const invalid = { userInput: 'hi', userContext: {} };
-      expect(AIAdvisorChatInputSchema.safeParse(invalid).success).toBe(false);
+    it('validates with empty history array', () => {
+      expect(AIAdvisorChatInputSchema.safeParse({
+        history: [],
+        userInput: 'hello',
+        userContext: { points: 0, score: 0, level: 'Seedling', challengesCompleted: 0 }
+      }).success).toBe(true);
+    });
+
+    it('rejects missing userInput', () => {
+      expect(AIAdvisorChatInputSchema.safeParse({
+        history: [],
+        userContext: { points: 0, score: 0, level: 'Seedling', challengesCompleted: 0 }
+      }).success).toBe(false);
+    });
+
+    it('rejects invalid role in history', () => {
+      expect(AIAdvisorChatInputSchema.safeParse({
+        history: [{ role: 'admin', text: 'hi' }],
+        userInput: 'hi',
+        userContext: { points: 0, score: 0, level: 'Seedling', challengesCompleted: 0 }
+      }).success).toBe(false);
     });
   });
 
   describe('GenerateCarbonAnalysisInputSchema', () => {
-    it('validates correct input', () => {
-      const valid = {
+    it('validates complete correct input', () => {
+      const input = {
         userName: 'John',
         totalEmissions: 5.5,
         emissionsBreakdown: { transportation: 2, homeEnergy: 1, food: 1.5, lifestyle: 1 }
       };
-      expect(GenerateCarbonAnalysisInputSchema.safeParse(valid).success).toBe(true);
+      expect(GenerateCarbonAnalysisInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it('rejects missing breakdown fields', () => {
+      const input = {
+        userName: 'John',
+        totalEmissions: 5,
+        emissionsBreakdown: { transportation: 2 }
+      };
+      expect(GenerateCarbonAnalysisInputSchema.safeParse(input).success).toBe(false);
     });
   });
 
   describe('GenerateReductionPlanInputSchema', () => {
-    it('rejects invalid types', () => {
-      const invalid = { totalEmissions: 'too much' };
-      expect(GenerateReductionPlanInputSchema.safeParse(invalid).success).toBe(false);
+    it('validates correct input', () => {
+      const input = {
+        totalEmissions: 10,
+        emissionsBreakdown: { transportation: 3, homeEnergy: 3, food: 2, lifestyle: 2 }
+      };
+      expect(GenerateReductionPlanInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it('rejects string totalEmissions', () => {
+      const input = {
+        totalEmissions: 'too much',
+        emissionsBreakdown: { transportation: 1, homeEnergy: 1, food: 1, lifestyle: 1 }
+      };
+      expect(GenerateReductionPlanInputSchema.safeParse(input).success).toBe(false);
     });
   });
 });
