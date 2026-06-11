@@ -32,7 +32,7 @@ interface HeroMetricProps {
   statusLabel?: string;
 }
 
-// Memoized Stat Component
+// Memoized Stat Component with accessibility focus
 const HeroMetric = memo(({ label, value, subValue, color, isSmall, statusLabel }: HeroMetricProps) => (
   <div className="space-y-1">
     <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
@@ -99,8 +99,9 @@ export default function Dashboard() {
   }, [profile]);
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[60vh]" aria-busy="true">
       <Loader2 className="h-10 w-10 text-primary animate-spin" />
+      <span className="sr-only">Synchronizing node telemetry...</span>
     </div>
   );
 
@@ -140,7 +141,7 @@ export default function Dashboard() {
                 label="Eco Score" 
                 value={stats.score.toFixed(0)} 
                 color="text-primary" 
-                statusLabel={stats.score > 50 ? 'good score' : 'needs improvement'}
+                statusLabel={stats.score > 50 ? 'Good condition' : 'Needs attention'}
               />
               <HeroMetric label="Green Pts" value={stats.points.toString()} color="text-emerald-600" />
               <HeroMetric label="Status" value={stats.level} color="text-foreground" isSmall />

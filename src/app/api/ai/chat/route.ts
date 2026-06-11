@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 
 // Sliding window rate limiter
 const rateLimitMap = new Map<string, number[]>();
-const RATE_LIMIT_THRESHOLD = 10;
+const RATE_LIMIT_THRESHOLD = 15;
 const RATE_LIMIT_WINDOW = 60 * 1000;
 
 /**
@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Rate Limiting (Using a placeholder userId if not decoded from token)
-    const ip = req.ip || 'anonymous';
+    // Rate Limiting
+    const ip = req.headers.get('x-forwarded-for') || req.ip || 'anonymous';
     const now = Date.now();
     const timestamps = rateLimitMap.get(ip) || [];
     const validTimestamps = timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW);
@@ -43,19 +43,26 @@ export async function POST(req: NextRequest) {
     const input = await req.json();
     const parsedInput = AIAdvisorChatInputSchema.parse(input);
 
+    // Correct Genkit 1.x streaming implementation
     const { stream } = ai.generateStream({
-      prompt: advisorPrompt(parsedInput),
+      prompt: advisorPrompt,
+      input: parsedInput,
     });
 
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
       async start(controller) {
-        for await (const chunk of stream) {
-          if (chunk.text) {
-            controller.enqueue(encoder.encode(chunk.text));
+        try {
+          for await (const chunk of stream) {
+            if (chunk.text) {
+              controller.enqueue(encoder.encode(chunk.text));
+            }
           }
+        } catch (err) {
+          console.error('[Stream error]:', err);
+        } finally {
+          controller.close();
         }
-        controller.close();
       },
     });
 
@@ -67,8 +74,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('[AI Stream Error]:', error);
-    return new Response(JSON.stringify({ error: error.message }), { 
+    console.error('[AI Stream Route Error]:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

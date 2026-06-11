@@ -149,10 +149,11 @@ export default function CalculatorPage() {
         <CardContent className="p-10 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Origin Point</Label>
+              <Label htmlFor="origin-input" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Origin Point</Label>
               <div className="relative group">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                 <Input 
+                  id="origin-input"
                   placeholder="Sync Origin" 
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
@@ -162,10 +163,11 @@ export default function CalculatorPage() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Destination Node</Label>
+              <Label htmlFor="destination-input" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Destination Node</Label>
               <div className="relative group">
                 <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                 <Input 
+                  id="destination-input"
                   placeholder="Sync Destination" 
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
