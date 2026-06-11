@@ -1,23 +1,22 @@
 /**
- * @fileOverview Centralized logging utility for EcoPulse AI.
+ * @fileOverview Environment-aware logger for EcoPulse AI.
+ * Logs all errors in production, suppresses info/debug/log in production.
  */
 
 const isProd = process.env.NODE_ENV === 'production';
 
-/**
- * Environment-aware logger that no-ops in production.
- */
 export const logger = {
-  log: (...args: any[]): void => {
-    if (!isProd) console.log(...args);
+  log: (...args: unknown[]): void => {
+    if (!isProd) console.log('[EcoPulse]', ...args);
   },
-  error: (...args: any[]): void => {
-    if (!isProd) console.error(...args);
+  error: (...args: unknown[]): void => {
+    // Always log errors, even in production
+    console.error('[EcoPulse Error]', ...args);
   },
-  warn: (...args: any[]): void => {
-    if (!isProd) console.warn(...args);
+  warn: (...args: unknown[]): void => {
+    console.warn('[EcoPulse Warn]', ...args);
   },
-  info: (...args: any[]): void => {
-    if (!isProd) console.info(...args);
+  info: (...args: unknown[]): void => {
+    if (!isProd) console.info('[EcoPulse]', ...args);
   },
 };
