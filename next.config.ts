@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
       'firebase',
       'date-fns',
       'zod',
+      '@/components/ui',
       '@radix-ui/react-accordion',
       '@radix-ui/react-alert-dialog',
       '@radix-ui/react-avatar',
