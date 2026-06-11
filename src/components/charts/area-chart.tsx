@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -11,9 +12,26 @@ import {
   Line
 } from 'recharts';
 
+/**
+ * Enhanced AreaChart component with accessibility support.
+ * Wraps the chart in a figure with a visually-hidden caption for screen readers.
+ */
 export default function AreaChartComponent({ data }: { data: any[] }) {
+  const latestValue = useMemo(() => {
+    if (!data || data.length === 0) return '0';
+    return data[data.length - 1].emissions;
+  }, [data]);
+
   return (
-    <div className="h-[400px] w-full">
+    <figure 
+      role="img" 
+      aria-label="Carbon emissions over time chart"
+      className="h-[400px] w-full"
+    >
+      <figcaption className="sr-only">
+        A line chart showing your carbon emissions trend. 
+        Latest value: {latestValue} kgCO2e. Target: 1.5 kgCO2e.
+      </figcaption>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
           <defs>
@@ -67,6 +85,6 @@ export default function AreaChartComponent({ data }: { data: any[] }) {
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </figure>
   );
 }
