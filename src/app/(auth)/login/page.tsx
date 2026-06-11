@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
 
-  const setSessionCookie = useCallback(async (user: any) => {
+  const setSessionCookie = useCallback(async (user: User) => {
     const idToken = await user.getIdToken();
     document.cookie = `__session=${idToken}; path=/; secure; samesite=strict; max-age=3600`;
   }, []);
