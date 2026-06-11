@@ -17,7 +17,7 @@ import { COLLECTIONS, IS_DEMO_KEY } from '@/lib/constants';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
-import { getErrorMessage } from '@/lib/handle-error';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { setSessionCookieAction } from '@/app/actions/session';
 
 /**
@@ -135,12 +135,12 @@ export default function RegisterPage() {
       
       toast({ title: "Node Registered", description: "Welcome to EcoPulse AI!" });
       router.push('/dashboard');
-    } catch (error: unknown) {
+    } catch (error: any) {
       logger.error('[Register] Error:', error);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: getErrorMessage(error),
+        description: getAuthErrorMessage(error.code),
       });
     } finally {
       setLoading(false);

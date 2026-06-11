@@ -22,7 +22,7 @@ import { Loader2, Leaf, Mail, Lock, Sparkles, FlaskConical } from 'lucide-react'
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { COLLECTIONS, APP_METADATA, DEMO_USER, IS_DEMO_KEY } from '@/lib/constants';
-import { getErrorMessage } from '@/lib/handle-error';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { setSessionCookieAction } from '@/app/actions/session';
 
 /**
@@ -51,11 +51,11 @@ export default function LoginPage() {
       sessionStorage.removeItem(IS_DEMO_KEY);
       await handleSession(userCredential.user);
       router.push('/dashboard');
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: getErrorMessage(error),
+        description: getAuthErrorMessage(error.code),
       });
     } finally {
       setLoading(false);
@@ -81,11 +81,11 @@ export default function LoginPage() {
       sessionStorage.removeItem(IS_DEMO_KEY);
       await handleSession(user);
       router.push('/dashboard');
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Login Failed',
-        description: getErrorMessage(error),
+        description: getAuthErrorMessage(error.code),
       });
     } finally {
       setGoogleLoading(false);
@@ -116,7 +116,7 @@ export default function LoginPage() {
       sessionStorage.setItem(IS_DEMO_KEY, 'true');
       await handleSession(user);
       router.push('/dashboard');
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Demo Access Failed',
