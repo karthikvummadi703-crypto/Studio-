@@ -220,6 +220,7 @@ export function FloatingAIAdvisor() {
               role="log"
               aria-live="polite"
               aria-label="AI conversation history"
+              aria-atomic="false"
             >
               <div className="space-y-6">
                 {messages.length > VISIBLE_MESSAGE_LIMIT && (
