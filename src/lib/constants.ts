@@ -18,3 +18,13 @@ export const APP_METADATA = {
   NAME: 'EcoPulse AI',
   TAGLINE: 'Environmental Strategy Node',
 } as const;
+
+export const DEMO_USER = {
+  FULL_NAME: 'Eco Explorer (Demo)',
+  GREEN_POINTS: 320,
+  SUSTAINABILITY_SCORE: 68,
+  LEVEL: 'Eco Warrior',
+  COMPLETED_CHALLENGES: ['challenge-1', 'challenge-2'],
+} as const;
+
+export const IS_DEMO_KEY = 'ecopulse_is_demo';
