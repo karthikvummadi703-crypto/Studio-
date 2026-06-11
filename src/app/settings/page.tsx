@@ -10,6 +10,7 @@ import { Bell, Shield, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { IS_DEMO_KEY } from '@/lib/constants';
 
 /**
  * Settings Page with session cleanup.
@@ -23,6 +24,7 @@ export default function SettingsPage() {
    */
   const handleLogout = useCallback(async () => {
     if (!auth) return;
+    sessionStorage.removeItem(IS_DEMO_KEY);
     document.cookie = '__session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
     await signOut(auth);
     router.push('/login');

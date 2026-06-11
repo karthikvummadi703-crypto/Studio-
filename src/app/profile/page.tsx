@@ -27,7 +27,7 @@ import { getLevelFromPoints } from '@/lib/levels';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { COLLECTIONS } from '@/lib/constants';
+import { COLLECTIONS, IS_DEMO_KEY } from '@/lib/constants';
 import { UserProfile } from '@/types';
 
 /**
@@ -49,6 +49,7 @@ export default function ProfilePage() {
    */
   const handleLogout = useCallback(async () => {
     if (!auth) return;
+    sessionStorage.removeItem(IS_DEMO_KEY);
     document.cookie = '__session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
     await signOut(auth);
     router.push('/login');
