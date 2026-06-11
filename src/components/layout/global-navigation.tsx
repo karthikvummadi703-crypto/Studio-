@@ -41,6 +41,15 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden w-full bg-transparent" suppressHydrationWarning>
+      {isLoading && !isAuthPage && (
+        <div
+          role="status"
+          aria-label="Loading authentication state"
+          className="sr-only"
+        >
+          Loading...
+        </div>
+      )}
       {showNav && (
         <nav 
           aria-label="Sidebar Navigation"
