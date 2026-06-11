@@ -2,18 +2,18 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, type User } from 'firebase/auth';
 import { auth, db, useUser } from '@/firebase';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Leaf, User, Mail, Lock } from 'lucide-react';
+import { Loader2, Leaf, User as UserIcon, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
-import { COLLECTIONS } from '@/lib/constants';
+import { COLLECTIONS, IS_DEMO_KEY } from '@/lib/constants';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,14 @@ export default function RegisterPage() {
       router.replace('/dashboard');
     }
   }, [user, authLoading, router]);
+
+  /**
+   * Sets the session cookie for middleware authentication.
+   */
+  const setSessionCookie = useCallback(async (user: User) => {
+    const idToken = await user.getIdToken();
+    document.cookie = `__session=${idToken}; path=/; secure; samesite=strict; max-age=3600`;
+  }, []);
 
   /**
    * Validates registration input with enhanced security and XSS protection.
@@ -120,6 +128,9 @@ export default function RegisterPage() {
         timestamp: serverTimestamp()
       });
 
+      sessionStorage.removeItem(IS_DEMO_KEY);
+      await setSessionCookie(userRefData);
+      
       toast({ title: "Node Registered", description: "Welcome to EcoPulse AI!" });
       router.push('/dashboard');
     } catch (error: any) {
@@ -132,7 +143,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  }, [fullName, email, password, validateInput, router, toast]);
+  }, [fullName, email, password, validateInput, router, toast, setSessionCookie]);
 
   if (authLoading) {
     return (
@@ -160,7 +171,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
                 <Input 
                   id="fullName"
                   autoComplete="name"
