@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   },
   compress: true,
   poweredByHeader: false,
+  serverExternalPackages: ['genkit', '@genkit-ai/google-genai', '@opentelemetry/sdk-node'],
   async headers() {
     return [
       {

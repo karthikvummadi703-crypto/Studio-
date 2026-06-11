@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { COLLECTIONS, APP_METADATA, DEMO_USER, IS_DEMO_KEY } from '@/lib/constants';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { setSessionCookieAction } from '@/app/actions/session';
+import { LEVEL_CONFIG } from '@/lib/levels';
 
 /**
  * Login page with email/password, Google OAuth, Forgot Password link, and Demo Mode.
