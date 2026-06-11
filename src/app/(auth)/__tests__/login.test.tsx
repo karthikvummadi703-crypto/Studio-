@@ -75,8 +75,8 @@ describe('LoginPage', () => {
     });
   });
 
-  it('demo button no longer exists', () => {
+  it('demo button is present in the document', () => {
     render(<LoginPage />);
-    expect(screen.queryByRole('button', { name: /demo/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /demo/i })).toBeInTheDocument();
   });
 });
