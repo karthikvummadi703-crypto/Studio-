@@ -29,15 +29,17 @@ interface HeroMetricProps {
   subValue?: string;
   color: string;
   isSmall?: boolean;
+  statusLabel?: string;
 }
 
 // Memoized Stat Component
-const HeroMetric = memo(({ label, value, subValue, color, isSmall }: HeroMetricProps) => (
+const HeroMetric = memo(({ label, value, subValue, color, isSmall, statusLabel }: HeroMetricProps) => (
   <div className="space-y-1">
     <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
     <div className="flex items-baseline gap-1">
       <span className={cn("font-headline font-bold tracking-tighter", isSmall ? "text-xl" : "text-3xl md:text-4xl", color)}>
         {value}
+        {statusLabel && <span className="sr-only"> ({statusLabel})</span>}
       </span>
       {subValue && <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">{subValue}</span>}
     </div>
@@ -134,7 +136,12 @@ export default function Dashboard() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <HeroMetric label="Eco Score" value={stats.score.toFixed(0)} color="text-primary" />
+              <HeroMetric 
+                label="Eco Score" 
+                value={stats.score.toFixed(0)} 
+                color="text-primary" 
+                statusLabel={stats.score > 50 ? 'good score' : 'needs improvement'}
+              />
               <HeroMetric label="Green Pts" value={stats.points.toString()} color="text-emerald-600" />
               <HeroMetric label="Status" value={stats.level} color="text-foreground" isSmall />
               <HeroMetric label="Latest Audit" value={stats.latestCO2.toFixed(1)} subValue="KG" color="text-zinc-600" />
