@@ -131,6 +131,7 @@ export function FloatingAIAdvisor() {
           onClick={toggleOpen}
           aria-label={isOpen ? "Close AI Advisor" : "Open AI Advisor"}
           aria-expanded={isOpen}
+          aria-controls="floating-advisor-panel"
         >
            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -168,11 +169,14 @@ export function FloatingAIAdvisor() {
         </div>
       </div>
 
-      <div className={cn(
-        "fixed bottom-20 right-8 z-50 transition-all duration-300 transform",
-        isOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-10 opacity-0 scale-95 pointer-events-none",
-        isExpanded ? "w-[500px]" : "w-[380px]"
-      )}>
+      <div 
+        id="floating-advisor-panel"
+        className={cn(
+          "fixed bottom-20 right-8 z-50 transition-all duration-300 transform",
+          isOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-10 opacity-0 scale-95 pointer-events-none",
+          isExpanded ? "w-[500px]" : "w-[380px]"
+        )}
+      >
         <Card className={cn(
           "shadow-2xl border-zinc-200 bg-white flex flex-col transition-all duration-300 rounded-[2rem] overflow-hidden",
           isExpanded ? "h-[700px]" : "h-[500px]"
@@ -211,8 +215,13 @@ export function FloatingAIAdvisor() {
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden bg-white">
-            <ScrollArea className="flex-1 p-6">
-              <div className="space-y-6" role="log" aria-live="polite" aria-label="AI conversation">
+            <ScrollArea 
+              className="flex-1 p-6"
+              role="log"
+              aria-live="polite"
+              aria-label="AI conversation history"
+            >
+              <div className="space-y-6">
                 {messages.length > VISIBLE_MESSAGE_LIMIT && (
                   <p className="text-center text-[10px] text-zinc-400 font-bold uppercase tracking-widest py-2">
                     {messages.length - VISIBLE_MESSAGE_LIMIT} earlier messages hidden
@@ -229,7 +238,11 @@ export function FloatingAIAdvisor() {
                   </div>
                 )}
                 {isLoading && !streamingText && (
-                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2">
+                  <div 
+                    className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2"
+                    aria-busy={isLoading}
+                    aria-label="AI is thinking"
+                  >
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Streaming...
                   </div>
@@ -237,24 +250,28 @@ export function FloatingAIAdvisor() {
                 <div ref={scrollRef} />
               </div>
             </ScrollArea>
-            <div className="p-5 border-t border-zinc-100 bg-white flex gap-3">
-              <Input 
-                placeholder="Ask Gemini..." 
-                aria-label="Type your sustainability question"
-                className="bg-zinc-50 border-zinc-200 text-xs h-12 rounded-xl"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              />
-              <Button 
-                size="icon" 
-                className="h-12 w-12 bg-primary shadow-lg hover:scale-105 transition-transform" 
-                onClick={() => handleSend()} 
-                disabled={isLoading}
-                aria-label="Send message"
-              >
-                <Send className="h-5 w-5 text-white" />
-              </Button>
+            <div className="p-5 border-t border-zinc-100 bg-white flex flex-col gap-3">
+              <div className="flex gap-3">
+                <Input 
+                  placeholder="Ask Gemini..." 
+                  aria-label="Message AI Advisor"
+                  aria-describedby="advisor-send-hint"
+                  className="bg-zinc-50 border-zinc-200 text-xs h-12 rounded-xl"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                />
+                <Button 
+                  size="icon" 
+                  className="h-12 w-12 bg-primary shadow-lg hover:scale-105 transition-transform" 
+                  onClick={() => handleSend()} 
+                  disabled={isLoading}
+                  aria-label="Send message"
+                >
+                  <Send className="h-5 w-5 text-white" />
+                </Button>
+              </div>
+              <span id="advisor-send-hint" className="sr-only">Press Enter or click Send to submit your message</span>
             </div>
           </CardContent>
         </Card>
