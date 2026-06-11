@@ -141,7 +141,7 @@ export default function Dashboard() {
                 label="Eco Score" 
                 value={stats.score.toFixed(0)} 
                 color="text-primary" 
-                statusLabel={stats.score > 50 ? 'Good condition' : 'Needs attention'}
+                statusLabel={stats.score > 50 ? 'good score' : 'needs improvement'}
               />
               <HeroMetric label="Green Pts" value={stats.points.toString()} color="text-emerald-600" />
               <HeroMetric label="Status" value={stats.level} color="text-foreground" isSmall />
