@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { DashboardSidebar } from './dashboard-sidebar';
+import { DemoBanner } from './demo-banner';
 import { MoreHorizontal, Bell, Search, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -17,11 +18,11 @@ const FloatingAIAdvisor = dynamic(
 
 export function GlobalNavigation({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { user, isLoading } = useUser();
+  const { user, isLoading, isDemo } = useUser();
   const pathname = usePathname();
 
   const isAuthPage = useMemo(() => {
-    return pathname === '/login' || pathname === '/register' || pathname === '/';
+    return pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/';
   }, [pathname]);
 
   const toggleSidebar = useCallback(() => {
@@ -76,6 +77,7 @@ export function GlobalNavigation({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {isDemo && !isAuthPage && <DemoBanner />}
         {showNav && (
           <header className="h-16 border-b border-zinc-100 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-6">
