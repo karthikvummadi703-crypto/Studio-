@@ -2,13 +2,12 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { 
-  doc, 
   Firestore,
   onSnapshot 
 } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
 import type { UserProfile, AIConversation } from '@/types';
 import { buildUserConversationsQuery } from '@/lib/firestore-queries';
-import { COLLECTIONS } from '@/lib/constants';
 
 interface AdvisorData {
   profile: UserProfile | null;
@@ -17,15 +16,13 @@ interface AdvisorData {
 }
 
 /**
- * Custom hook that batches profile and chat history subscriptions.
- * Uses centralized query factory for history telemetry.
+ * Custom hook that batches chat history subscriptions but reads the profile
+ * from the shared global Firebase context to avoid redundant listeners.
  */
 export function useAdvisorData(userId: string | undefined, db: Firestore | undefined): AdvisorData {
-  const [data, setData] = useState<AdvisorData>({
-    profile: null,
-    chats: [],
-    isLoading: true
-  });
+  const { profile, isProfileLoading } = useFirebase();
+  const [chats, setChats] = useState<AIConversation[]>([]);
+  const [isChatsLoading, setIsChatsLoading] = useState(true);
 
   const historyQuery = useMemo(() => {
     if (!userId || !db) return null;
@@ -34,39 +31,23 @@ export function useAdvisorData(userId: string | undefined, db: Firestore | undef
 
   useEffect(() => {
     if (!userId || !db || !historyQuery) {
-      setData({ profile: null, chats: [], isLoading: false });
+      setChats([]);
+      setIsChatsLoading(false);
       return;
     }
 
-    const profileRef = doc(db, COLLECTIONS.USERS, userId);
-
-    let profileReady = false;
-    let chatsReady = false;
-
-    const profileUnsub = onSnapshot(profileRef, (snap) => {
-      profileReady = true;
-      setData((prev: AdvisorData) => ({
-        ...prev,
-        profile: snap.exists() ? { ...snap.data(), id: snap.id } as UserProfile : null,
-        isLoading: !(profileReady && chatsReady)
-      }));
+    const unsubscribe = onSnapshot(historyQuery, (snap) => {
+      const chatsData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as AIConversation));
+      setChats(chatsData);
+      setIsChatsLoading(false);
     });
 
-    const chatsUnsub = onSnapshot(historyQuery, (snap) => {
-      chatsReady = true;
-      const chats = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as AIConversation));
-      setData((prev: AdvisorData) => ({
-        ...prev,
-        chats,
-        isLoading: !(profileReady && chatsReady)
-      }));
-    });
-
-    return () => {
-      profileUnsub();
-      chatsUnsub();
-    };
+    return () => unsubscribe();
   }, [userId, db, historyQuery]);
 
-  return data;
+  return {
+    profile,
+    chats,
+    isLoading: isProfileLoading || isChatsLoading
+  };
 }

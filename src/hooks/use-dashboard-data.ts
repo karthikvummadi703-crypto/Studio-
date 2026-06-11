@@ -2,23 +2,18 @@
 
 import { useMemo } from 'react';
 import { 
-  doc, 
   Firestore 
 } from 'firebase/firestore';
-import { useDoc, useCollection } from '@/firebase';
-import type { UserProfile, CarbonRecord, Activity } from '@/types';
+import { useCollection, useFirebase } from '@/firebase';
+import type { Activity, CarbonRecord } from '@/types';
 import { buildUserActivitiesQuery, buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
-import { COLLECTIONS } from '@/lib/constants';
 
 /**
- * Aggregates dashboard telemetry including profile, recent activities, and carbon records.
+ * Aggregates dashboard telemetry including recent activities and carbon records.
+ * Reads the shared profile from the global Firebase context to eliminate duplicate listeners.
  */
 export function useDashboardData(userId: string | undefined, db: Firestore | undefined) {
-  const profileRef = useMemo(() => 
-    (userId && db ? doc(db, COLLECTIONS.USERS, userId) : null), 
-    [userId, db]
-  );
-  const { data: profile, isLoading: profileLoading } = useDoc<UserProfile>(profileRef as any);
+  const { profile, isProfileLoading } = useFirebase();
 
   const activitiesQuery = useMemo(() => {
     if (!db || !userId) return null;
@@ -32,7 +27,7 @@ export function useDashboardData(userId: string | undefined, db: Firestore | und
   }, [db, userId]);
   const { data: records, isLoading: recordsLoading } = useCollection<CarbonRecord>(recordsQuery);
 
-  const isLoading = profileLoading || activitiesLoading || recordsLoading;
+  const isLoading = isProfileLoading || activitiesLoading || recordsLoading;
 
   return {
     profile,
