@@ -66,6 +66,9 @@ export default function AIAdvisorPage() {
   const activeChat = useMemo(() => chats.find((c: AIConversation) => c.id === activeChatId), [chats, activeChatId]);
   const messages = useMemo(() => activeChat?.messages || [], [activeChat]);
 
+  const VISIBLE_LIMIT = 50;
+  const visibleMessages = useMemo(() => messages.slice(-VISIBLE_LIMIT), [messages]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -276,7 +279,12 @@ export default function AIAdvisorPage() {
               </div>
             ) : (
               <div className="space-y-8 max-w-4xl mx-auto" role="log" aria-live="polite" aria-label="Advisor conversation history">
-                {messages.map((m: IChatMessage, i: number) => (
+                {messages.length > VISIBLE_LIMIT && (
+                  <p className="text-center text-[10px] text-zinc-400 font-bold uppercase tracking-widest py-4">
+                    {messages.length - VISIBLE_LIMIT} earlier messages hidden
+                  </p>
+                )}
+                {visibleMessages.map((m: IChatMessage, i: number) => (
                   <ChatMessage key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 
