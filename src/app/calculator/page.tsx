@@ -36,8 +36,16 @@ const TRANSPORT_MODES = [
   { id: 'ev', label: 'Electric Vehicle', icon: Zap, co2PerKm: 0.04, points: 8 },
 ] as const;
 
+interface MetricDisplayProps {
+  label: string;
+  value: string | number;
+  unit?: string;
+  color: string;
+  isBadge?: boolean;
+}
+
 // Memoized Metric Display
-const MetricDisplay = memo(({ label, value, unit, color, isBadge }: any) => {
+const MetricDisplay = memo(({ label, value, unit, color, isBadge }: MetricDisplayProps) => {
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{label}</p>
@@ -139,7 +147,7 @@ export default function CalculatorPage() {
   const discardResult = useCallback(() => setActiveResult(null), []);
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 space-y-12 animate-fade-in">
+    <div className="max-w-3xl auto py-12 px-4 space-y-12 animate-fade-in">
       <header className="text-center space-y-3">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight italic">Carbon Impact Audit</h1>
         <p className="text-zinc-600 text-sm max-w-md mx-auto font-medium">Verify your transportation footprint with real-time telemetry verification.</p>
@@ -230,7 +238,7 @@ export default function CalculatorPage() {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-10 border-y border-black/5 py-10">
-                <MetricDisplay label="Total Dist" value={activeResult.distance} unit="KM" />
+                <MetricDisplay label="Total Dist" value={activeResult.distance} unit="KM" color="text-foreground" />
                 <MetricDisplay label="CO₂ Generated" value={activeResult.co2} unit="KG" color="text-red-500" />
                 <MetricDisplay label="Reward Credit" value={activeResult.points} unit="PTS" color="text-primary" />
                 <MetricDisplay label="Node Status" value="ACTIVE" isBadge color="text-emerald-500" />

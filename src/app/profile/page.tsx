@@ -28,7 +28,7 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { COLLECTIONS, IS_DEMO_KEY } from '@/lib/constants';
-import { UserProfile } from '@/types';
+import type { UserProfile } from '@/types';
 
 /**
  * Enhanced User Profile Page with strict session cleanup.
