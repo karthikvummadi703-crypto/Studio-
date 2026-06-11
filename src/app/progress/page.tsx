@@ -13,6 +13,26 @@ const AreaChartComponent = dynamic(() => import('@/components/charts/area-chart'
   loading: () => <div className="h-[400px] w-full bg-zinc-50 rounded-2xl animate-pulse flex items-center justify-center text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Initialising Analytics...</div> 
 });
 
+interface CalculatorRecord {
+  co2: number;
+  timestamp: { toDate: () => Date } | string | number;
+  userId: string;
+}
+
+interface GoalItemProps {
+  label: string;
+  progress: number;
+  completed?: boolean;
+}
+
+interface AchievementProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  date: string;
+  color: string;
+  active?: boolean;
+}
+
 export default function ProgressPage() {
   const { user } = useUser();
   const db = useFirestore();
@@ -27,12 +47,12 @@ export default function ProgressPage() {
     );
   }, [db, user]);
   
-  const { data: records, isLoading } = useCollection<any>(recordsQuery);
+  const { data: records, isLoading } = useCollection<CalculatorRecord>(recordsQuery as any);
 
   const chartData = useMemo(() => {
     if (!records?.length) return [];
-    return records.map((r: any) => ({
-      date: new Date(r.timestamp?.toDate ? r.timestamp.toDate() : r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    return records.map((r) => ({
+      date: new Date(typeof r.timestamp === 'object' && 'toDate' in r.timestamp ? r.timestamp.toDate() : r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       emissions: Number(r.co2 || 0).toFixed(2),
       goal: 1.5
     }));
@@ -114,7 +134,7 @@ export default function ProgressPage() {
   );
 }
 
-function GoalItem({ label, progress, completed }: any) {
+function GoalItem({ label, progress, completed }: GoalItemProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
@@ -131,7 +151,7 @@ function GoalItem({ label, progress, completed }: any) {
   );
 }
 
-function Achievement({ icon: Icon, title, date, color, active }: any) {
+function Achievement({ icon: Icon, title, date, color, active }: AchievementProps) {
   return (
     <div className={cn(
       "flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500",
