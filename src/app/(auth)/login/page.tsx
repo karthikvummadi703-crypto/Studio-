@@ -6,9 +6,9 @@ import {
   signInWithEmailAndPassword,
   signInAnonymously,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  type User
 } from 'firebase/auth';
-import type { User } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';

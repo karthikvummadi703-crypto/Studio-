@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,10 @@ import {
   Navigation
 } from 'lucide-react';
 import { collection, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import type { UserProfile } from '@/types';
 
 const TRANSPORT_MODES = [
   { id: 'walking', label: 'Walking', icon: Footprints, co2PerKm: 0, points: 20 },
@@ -39,7 +40,7 @@ const TRANSPORT_MODES = [
 interface MetricDisplayProps {
   label: string;
   value: string | number;
-  unit?: string;
+  unit: string;
   color: string;
   isBadge?: boolean;
 }
@@ -65,6 +66,9 @@ export default function CalculatorPage() {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
+
+  const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
+  const { data: profile, isLoading: profileLoading } = useDoc<UserProfile>(profileRef as any);
 
   const [start, setStart] = useState('');
   const [destination, setDestination] = useState('');
@@ -147,7 +151,7 @@ export default function CalculatorPage() {
   const discardResult = useCallback(() => setActiveResult(null), []);
 
   return (
-    <div className="max-w-3xl auto py-12 px-4 space-y-12 animate-fade-in">
+    <div className="max-w-3xl mx-auto py-12 px-4 space-y-12 animate-fade-in">
       <header className="text-center space-y-3">
         <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight italic">Carbon Impact Audit</h1>
         <p className="text-zinc-600 text-sm max-w-md mx-auto font-medium">Verify your transportation footprint with real-time telemetry verification.</p>
@@ -241,7 +245,7 @@ export default function CalculatorPage() {
                 <MetricDisplay label="Total Dist" value={activeResult.distance} unit="KM" color="text-foreground" />
                 <MetricDisplay label="CO₂ Generated" value={activeResult.co2} unit="KG" color="text-red-500" />
                 <MetricDisplay label="Reward Credit" value={activeResult.points} unit="PTS" color="text-primary" />
-                <MetricDisplay label="Node Status" value="ACTIVE" isBadge color="text-emerald-500" />
+                <MetricDisplay label="Node Status" value="ACTIVE" isBadge unit="" color="text-emerald-500" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
