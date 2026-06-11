@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -11,7 +12,16 @@ import { buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
 
 const AreaChartComponent = dynamic(() => import('@/components/charts/area-chart'), { 
   ssr: false, 
-  loading: () => <div className="h-[400px] w-full bg-zinc-50 rounded-2xl animate-pulse flex items-center justify-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Initialising Analytics...</div> 
+  loading: () => (
+    <div 
+      role="status" 
+      aria-label="Initialising Analytics"
+      className="h-[400px] w-full bg-zinc-50 rounded-2xl animate-pulse flex items-center justify-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest"
+    >
+      <span className="sr-only">Initialising Analytics chart, please wait...</span>
+      Initialising Analytics...
+    </div>
+  )
 });
 
 interface CalculatorRecord {
@@ -63,7 +73,7 @@ export default function ProgressPage() {
   const hasData = useMemo(() => chartData.length > 0, [chartData]);
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[60vh]" role="status" aria-live="polite">
       <Spinner className="h-10 w-10 text-primary" label="Synchronizing impact analytics..." />
     </div>
   );

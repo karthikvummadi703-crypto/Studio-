@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -193,7 +194,7 @@ export function FloatingAIAdvisor() {
             >
               <div className="space-y-6">
                 {messages.length > VISIBLE_MESSAGE_LIMIT && (
-                  <p className="text-center text-[10px] text-zinc-400 font-bold uppercase tracking-widest py-2">
+                  <p className="text-center text-[10px] text-zinc-500 font-bold uppercase tracking-widest py-2">
                     {messages.length - VISIBLE_MESSAGE_LIMIT} earlier messages hidden
                   </p>
                 )}
@@ -201,14 +202,14 @@ export function FloatingAIAdvisor() {
                   <AdvisorMessage key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 {streamingText && (
-                  <div className="flex flex-col max-w-[90%] items-start animate-fade-in">
+                  <div className="flex flex-col max-w-[90%] items-start animate-fade-in" role="status" aria-live="polite">
                     <div className="p-4 rounded-[1.5rem] rounded-tl-none text-xs leading-relaxed shadow-sm bg-zinc-50 border border-zinc-200 text-zinc-800">
                       {streamingText}
                     </div>
                   </div>
                 )}
                 {isLoading && !streamingText && (
-                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2">
+                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2" role="status" aria-live="polite" aria-label="AI Generating response">
                     <Spinner className="h-4 w-4" label="AI is thinking..." />
                     Thinking...
                   </div>

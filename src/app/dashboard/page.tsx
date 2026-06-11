@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, memo } from 'react';
@@ -99,7 +100,7 @@ export default function Dashboard() {
   }, [profile]);
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[60vh]" aria-busy="true">
+    <div className="flex items-center justify-center min-h-[60vh]" role="status" aria-live="polite">
       <Spinner className="h-10 w-10 text-primary" label="Synchronizing node telemetry..." />
     </div>
   );

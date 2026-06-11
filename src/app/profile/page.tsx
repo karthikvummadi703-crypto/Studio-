@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useCallback } from 'react';
@@ -71,7 +72,7 @@ export default function ProfilePage() {
   const loading = authLoading || profileLoading;
 
   if (loading) return (
-    <div className="flex items-center justify-center h-full min-h-[60vh]">
+    <div className="flex items-center justify-center h-full min-h-[60vh]" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4">
         <Spinner className="h-10 w-10 text-primary" label="Syncing environmental node profile..." />
         <p className="text-primary font-bold uppercase tracking-widest text-[10px]">Syncing Environmental Node...</p>

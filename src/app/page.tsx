@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -20,7 +21,7 @@ export default function RootPage() {
   }, [user, isLoading, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+    <div className="flex flex-col items-center justify-center min-h-[60vh]" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4 p-8 bg-white rounded-3xl shadow-lg border border-zinc-100">
         <div className="p-3 bg-primary/10 rounded-2xl">
           <Leaf className="h-10 w-10 text-primary" />

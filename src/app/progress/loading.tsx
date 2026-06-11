@@ -1,3 +1,4 @@
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -5,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function ProgressLoading() {
   return (
-    <div className="space-y-8 animate-pulse">
+    <div className="space-y-8 animate-pulse" role="status" aria-label="Loading analytics content">
+      <span className="sr-only">Loading analytics telemetry, please wait...</span>
       <Skeleton className="h-10 w-64" />
       <Skeleton className="h-[400px] w-full rounded-[2rem]" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

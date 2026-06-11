@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
@@ -171,7 +172,7 @@ export default function AIAdvisorPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center" aria-busy="true">
+      <div className="h-full flex items-center justify-center" role="status" aria-live="polite">
         <Spinner className="h-10 w-10 text-primary" label="Loading strategic advisor..." />
       </div>
     );
@@ -210,7 +211,7 @@ export default function AIAdvisorPage() {
                     "w-full text-left p-4 rounded-2xl transition-all group flex items-start gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     activeChatId === chat.id 
                       ? "bg-primary text-primary-foreground shadow-lg" 
-                      : "hover:bg-primary/5 text-zinc-600 hover:text-primary"
+                      : "hover:bg-primary/5 text-zinc-500 hover:text-primary"
                   )}
                 >
                   <MessageSquare className={cn("h-4 w-4 mt-0.5 shrink-0", activeChatId === chat.id ? "text-primary-foreground" : "text-zinc-500 group-hover:text-primary")} />
@@ -288,7 +289,7 @@ export default function AIAdvisorPage() {
                 ))}
                 
                 {streamingText && (
-                  <div className="flex gap-4 flex-row animate-fade-in">
+                  <div className="flex gap-4 flex-row animate-fade-in" role="status" aria-live="polite">
                     <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shrink-0">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
@@ -299,7 +300,7 @@ export default function AIAdvisorPage() {
                 )}
 
                 {loading && !streamingText && (
-                  <div className="flex gap-4 animate-pulse">
+                  <div className="flex gap-4 animate-pulse" role="status" aria-live="polite" aria-label="AI Generating response">
                     <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>

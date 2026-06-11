@@ -1,3 +1,4 @@
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -5,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function DashboardLoading() {
   return (
-    <div className="space-y-10 animate-pulse">
+    <div className="space-y-10 animate-pulse" role="status" aria-label="Loading dashboard telemetry">
+      <span className="sr-only">Synchronizing dashboard node, please wait...</span>
       <div className="flex justify-between items-end">
         <div className="space-y-2">
           <Skeleton className="h-3 w-32" />

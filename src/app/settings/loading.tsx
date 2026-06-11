@@ -1,3 +1,4 @@
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -5,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function SettingsLoading() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-pulse">
+    <div className="max-w-4xl mx-auto space-y-6 animate-pulse" role="status" aria-label="Loading settings">
+      <span className="sr-only">Loading node preferences, please wait...</span>
       <Skeleton className="h-10 w-40" />
       <Skeleton className="h-48 w-full rounded-2xl" />
       <Skeleton className="h-32 w-full rounded-2xl" />
