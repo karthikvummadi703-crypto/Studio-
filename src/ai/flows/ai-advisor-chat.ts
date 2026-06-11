@@ -57,7 +57,7 @@ History:
 {{role}}: {{text}}
 {{/each}}
 
-User: {{{userInput}}}
+User: {{userInput}}
 
 Instruction: Provide a concise, 2-sentence actionable tip. Be specific to their stats. If this is the start of a conversation, provide a suggestedTitle for the chat.`,
 });
