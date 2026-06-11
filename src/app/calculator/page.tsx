@@ -36,7 +36,7 @@ const TRANSPORT_MODES = [
   { id: 'ev', label: 'Electric Vehicle', icon: Zap, co2PerKm: 0.04, points: 8 },
 ] as const;
 
-// Memoized Metric Component
+// Memoized Metric Display
 const MetricDisplay = memo(({ label, value, unit, color, isBadge }: any) => {
   return (
     <div className="space-y-2">
@@ -176,12 +176,19 @@ export default function CalculatorPage() {
           </div>
 
           <div className="space-y-4">
-            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Transport Mode Telemetry</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Label id="transport-mode-label" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Transport Mode Telemetry</Label>
+            <div 
+              role="group" 
+              aria-labelledby="transport-mode-label"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+            >
+              <span id="transport-mode-label-sr" className="sr-only">Select transport mode</span>
               {TRANSPORT_MODES.map((mode) => (
                 <button
                   key={mode.id}
                   onClick={() => setSelectedMode(mode.id)}
+                  aria-pressed={selectedMode === mode.id}
+                  aria-label={`${mode.label}${selectedMode === mode.id ? ', selected' : ''}`}
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2 group",
                     selectedMode === mode.id 
