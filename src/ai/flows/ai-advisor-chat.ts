@@ -14,8 +14,15 @@ const MessageSchema = z.object({
 });
 
 export const AIAdvisorChatInputSchema = z.object({
-  history: z.array(MessageSchema).describe('Recent chat history.'),
-  userInput: z.string().min(1).describe('User input.'),
+  history: z
+    .array(MessageSchema)
+    .max(20)
+    .describe('Recent chat history, max 20 messages.'),
+  userInput: z
+    .string()
+    .min(1)
+    .max(500)
+    .describe('User input, max 500 chars.'),
   userContext: z.object({
     points: z.number(),
     score: z.number(),
