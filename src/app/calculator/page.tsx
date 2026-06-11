@@ -196,13 +196,13 @@ export default function CalculatorPage() {
               aria-labelledby="transport-mode-label"
               className="grid grid-cols-2 sm:grid-cols-4 gap-3"
             >
-              <span id="transport-mode-label-sr" className="sr-only">Select transport mode</span>
+              <span id="transport-mode-label-sr" className="sr-only">Select your transport mode</span>
               {TRANSPORT_MODES.map((mode) => (
                 <button
                   key={mode.id}
                   onClick={() => setSelectedMode(mode.id)}
                   aria-pressed={selectedMode === mode.id}
-                  aria-label={`${mode.label}${selectedMode === mode.id ? ', selected' : ''}`}
+                  aria-label={`${mode.label}${selectedMode === mode.id ? ', currently selected' : ''}`}
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2 group",
                     selectedMode === mode.id 
