@@ -4,23 +4,23 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   signInWithEmailAndPassword, 
-  signInAnonymously,
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
 import { auth, db } from '@/firebase';
-import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Leaf, Sparkles, Mail, Lock } from 'lucide-react';
+import { Loader2, Leaf, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { COLLECTIONS, APP_METADATA } from '@/lib/constants';
 
 /**
  * Secure Login Page with Middleware Session Synchronization.
+ * Demo mode has been decommissioned for production security.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -28,7 +28,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   /**
@@ -96,46 +95,6 @@ export default function LoginPage() {
     }
   }, [router, toast, setSessionCookie]);
 
-  /**
-   * Initializes anonymous session for the Demo Mode.
-   */
-  const handleDemoMode = useCallback(async (): Promise<void> => {
-    setDemoLoading(true);
-    try {
-      const cred = await signInAnonymously(auth);
-      const user = cred.user;
-
-      const userRef = doc(db, COLLECTIONS.USERS, user.uid);
-      await setDoc(userRef, {
-        fullName: 'Eco Explorer (Demo)',
-        greenPoints: 320,
-        sustainabilityScore: 68,
-        level: 'Eco Warrior',
-        createdAt: serverTimestamp(),
-        completedChallenges: ['challenge-1']
-      }, { merge: true });
-
-      await addDoc(collection(db, COLLECTIONS.ACTIVITIES), {
-        userId: user.uid,
-        type: 'milestone',
-        description: 'Joined the EcoPulse network via Demo Mode',
-        pointsEarned: 50,
-        timestamp: serverTimestamp()
-      });
-
-      await setSessionCookie(user);
-      router.push('/dashboard');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Demo Access Failed",
-        description: "Anonymous Auth may be disabled.",
-      });
-    } finally {
-      setDemoLoading(false);
-    }
-  }, [router, toast, setSessionCookie]);
-
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <Card className="w-full max-w-md bg-white border-zinc-200 shadow-2xl rounded-[2.5rem] overflow-hidden">
@@ -199,7 +158,7 @@ export default function LoginPage() {
             <div className="relative flex justify-center text-[10px] uppercase font-black tracking-[0.2em]"><span className="bg-white px-2 text-zinc-600">Or</span></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <Button 
               variant="outline" 
               className="h-12 border-zinc-300 text-zinc-800 font-bold rounded-xl flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-primary"
@@ -207,16 +166,7 @@ export default function LoginPage() {
               disabled={googleLoading}
               aria-label="Sign in with Google"
             >
-              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Google</>}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-12 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-primary"
-              onClick={handleDemoMode}
-              disabled={demoLoading}
-              aria-label="Explore as Demo User"
-            >
-              {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4" /> Demo</>}
+              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Sign in with Google</>}
             </Button>
           </div>
         </CardContent>

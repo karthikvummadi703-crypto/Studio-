@@ -1,35 +1,82 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LoginPage from '../login/page';
-import * as auth from 'firebase/auth';
-
-// Mock Firebase Auth
-vi.mock('firebase/auth', () => ({
-  signInWithEmailAndPassword: vi.fn(),
-  signInAnonymously: vi.fn(),
-  GoogleAuthProvider: vi.fn(),
-  signInWithPopup: vi.fn(),
-  getAuth: vi.fn(),
-}));
-
-// Mock Firebase Config
-vi.mock('@/firebase', () => ({
-  auth: {},
-  db: {},
-}));
+import * as firebaseAuth from 'firebase/auth';
 
 describe('LoginPage', () => {
-  it('does not submit when email or password is empty', async () => {
-    render(<LoginPage />);
-    const submitBtn = screen.getByRole('button', { name: /sign in/i });
-    fireEvent.click(submitBtn);
-    expect(auth.signInWithEmailAndPassword).not.toHaveBeenCalled();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('calls signInAnonymously when Demo button is clicked', async () => {
+  it('renders all form elements', () => {
     render(<LoginPage />);
-    const demoBtn = screen.getByRole('button', { name: /demo/i });
-    fireEvent.click(demoBtn);
-    expect(auth.signInAnonymously).toHaveBeenCalled();
+    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('does not submit when email is empty', async () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(firebaseAuth.signInWithEmailAndPassword).not.toHaveBeenCalled();
+  });
+
+  it('does not submit when password is empty', async () => {
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@test.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(firebaseAuth.signInWithEmailAndPassword).not.toHaveBeenCalled();
+  });
+
+  it('calls signInWithEmailAndPassword with correct values', async () => {
+    vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValueOnce({
+      user: { getIdToken: vi.fn().mockResolvedValue('mock-token'), uid: '123' }
+    } as any);
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(firebaseAuth.signInWithEmailAndPassword).toHaveBeenCalledWith(
+        expect.anything(),
+        'user@test.com',
+        'password123'
+      );
+    });
+  });
+
+  it('shows error toast on invalid credentials', async () => {
+    vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockRejectedValueOnce(
+      new Error('auth/wrong-password')
+    );
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpass1' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/login failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it('calls signInWithPopup for Google login', async () => {
+    vi.mocked(firebaseAuth.signInWithPopup).mockResolvedValueOnce({
+      user: { uid: '123', displayName: 'Test', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('tok') }
+    } as any);
+
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
+
+    await waitFor(() => {
+      expect(firebaseAuth.signInWithPopup).toHaveBeenCalled();
+    });
+  });
+
+  it('demo button no longer exists', () => {
+    render(<LoginPage />);
+    expect(screen.queryByRole('button', { name: /demo/i })).not.toBeInTheDocument();
   });
 });
