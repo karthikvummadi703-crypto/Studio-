@@ -50,6 +50,12 @@ export function FloatingAIAdvisor() {
     { role: 'ai', text: 'Hello! I am your Gemini-powered advisor. How can I help you reduce your footprint today?', timestamp: new Date().toISOString() }
   ]);
 
+  const VISIBLE_MESSAGE_LIMIT = 20;
+  const visibleMessages = useMemo(
+    () => messages.slice(-VISIBLE_MESSAGE_LIMIT),
+    [messages]
+  );
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -207,7 +213,12 @@ export function FloatingAIAdvisor() {
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden bg-white">
             <ScrollArea className="flex-1 p-6">
               <div className="space-y-6" role="log" aria-live="polite" aria-label="AI conversation">
-                {messages.map((m, i) => (
+                {messages.length > VISIBLE_MESSAGE_LIMIT && (
+                  <p className="text-center text-[10px] text-zinc-400 font-bold uppercase tracking-widest py-2">
+                    {messages.length - VISIBLE_MESSAGE_LIMIT} earlier messages hidden
+                  </p>
+                )}
+                {visibleMessages.map((m, i) => (
                   <Bubble key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 {streamingText && (
