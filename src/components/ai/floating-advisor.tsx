@@ -1,34 +1,16 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
-import { Sparkles, X, Send, Loader2, Minimize2, Maximize2, ExternalLink } from 'lucide-react';
-import { Button, Input, Card, CardContent, CardHeader, CardTitle, ScrollArea } from '@/components/ui';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { Sparkles, X, Minimize2, Maximize2, ExternalLink, Loader2 } from 'lucide-react';
+import { Button, Card, CardContent, CardHeader, CardTitle, ScrollArea } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getLevelFromPoints } from '@/lib/levels';
+import { AdvisorMessage } from './advisor-message';
+import { AdvisorInput } from './advisor-input';
 import type { UserProfile, ChatMessage } from '@/types';
-
-/**
- * Individual chat message bubble component for the floating interface.
- */
-const Bubble = memo(({ message, isUser }: { message: ChatMessage, isUser: boolean }) => (
-  <div className={cn(
-    "flex flex-col max-w-[90%] animate-fade-in",
-    isUser ? "ml-auto items-end" : "items-start"
-  )}>
-    <div className={cn(
-      "p-4 rounded-[1.5rem] text-xs leading-relaxed shadow-sm",
-      isUser 
-        ? "bg-primary text-white rounded-tr-none font-medium" 
-        : "bg-zinc-50 border border-zinc-200 rounded-tl-none text-zinc-800"
-    )}>
-      {message.text}
-    </div>
-  </div>
-));
-Bubble.displayName = 'Bubble';
 
 /**
  * Floating persistent AI assistant for quick sustainability queries.
@@ -51,10 +33,7 @@ export function FloatingAIAdvisor() {
   ]);
 
   const VISIBLE_MESSAGE_LIMIT = 20;
-  const visibleMessages = useMemo(
-    () => messages.slice(-VISIBLE_MESSAGE_LIMIT),
-    [messages]
-  );
+  const visibleMessages = useMemo(() => messages.slice(-VISIBLE_MESSAGE_LIMIT), [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -62,10 +41,6 @@ export function FloatingAIAdvisor() {
     }
   }, [messages, streamingText]);
 
-  /**
-   * Sends a user query to the AI and handles the streaming response in the small interface.
-   * @param customMsg Optional message override.
-   */
   const handleSend = useCallback(async (customMsg?: string) => {
     const text = (customMsg || input).trim();
     if (!text || isLoading || !user) return;
@@ -120,15 +95,12 @@ export function FloatingAIAdvisor() {
     }
   }, [input, isLoading, messages, profile, user]);
 
-  const toggleOpen = useCallback(() => setIsOpen(prev => !prev), []);
-  const toggleExpanded = useCallback(() => setIsExpanded(prev => !prev), []);
-
   return (
     <>
-      <div className="fixed bottom-0 left-64 right-0 h-16 bg-white/95 border-t border-black/5 flex items-center justify-between px-10 z-40 transition-all duration-300">
+      <div className="fixed bottom-0 left-64 right-0 h-16 bg-white/95 border-t border-black/5 flex items-center justify-between px-10 z-40">
         <button 
           className="flex items-center gap-4 group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary rounded-xl p-1 outline-none" 
-          onClick={toggleOpen}
+          onClick={() => setIsOpen(prev => !prev)}
           aria-label={isOpen ? "Close AI Advisor" : "Open AI Advisor"}
           aria-expanded={isOpen}
           aria-controls="floating-advisor-panel"
@@ -160,7 +132,6 @@ export function FloatingAIAdvisor() {
                     setIsOpen(true);
                     handleSend(prompt);
                   }}
-                  aria-label={`Ask AI: ${prompt}`}
                 >
                   {prompt}
                 </Button>
@@ -198,8 +169,7 @@ export function FloatingAIAdvisor() {
                 variant="ghost" 
                 size="icon" 
                 className="h-8 w-8 text-zinc-500" 
-                onClick={toggleExpanded}
-                aria-label={isExpanded ? "Minimize panel" : "Maximize panel"}
+                onClick={() => setIsExpanded(p => !p)}
               >
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
@@ -208,7 +178,6 @@ export function FloatingAIAdvisor() {
                 size="icon" 
                 className="h-8 w-8 text-zinc-500" 
                 onClick={() => setIsOpen(false)}
-                aria-label="Close panel"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -229,7 +198,7 @@ export function FloatingAIAdvisor() {
                   </p>
                 )}
                 {visibleMessages.map((m, i) => (
-                  <Bubble key={i} message={m} isUser={m.role === 'user'} />
+                  <AdvisorMessage key={i} message={m} isUser={m.role === 'user'} />
                 ))}
                 {streamingText && (
                   <div className="flex flex-col max-w-[90%] items-start animate-fade-in">
@@ -239,41 +208,20 @@ export function FloatingAIAdvisor() {
                   </div>
                 )}
                 {isLoading && !streamingText && (
-                  <div 
-                    className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2"
-                    aria-busy={isLoading}
-                    aria-label="AI is thinking"
-                  >
+                  <div className="flex items-center gap-3 text-[10px] text-primary uppercase font-black tracking-widest animate-pulse px-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Streaming...
+                    Thinking...
                   </div>
                 )}
                 <div ref={scrollRef} />
               </div>
             </ScrollArea>
-            <div className="p-5 border-t border-zinc-100 bg-white flex flex-col gap-3">
-              <div className="flex gap-3">
-                <Input 
-                  placeholder="Ask Gemini..." 
-                  aria-label="Message AI Advisor"
-                  aria-describedby="advisor-send-hint"
-                  className="bg-zinc-50 border-zinc-200 text-xs h-12 rounded-xl"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                />
-                <Button 
-                  size="icon" 
-                  className="h-12 w-12 bg-primary shadow-lg hover:scale-105 transition-transform" 
-                  onClick={() => handleSend()} 
-                  disabled={isLoading}
-                  aria-label="Send message"
-                >
-                  <Send className="h-5 w-5 text-white" />
-                </Button>
-              </div>
-              <span id="advisor-send-hint" className="sr-only">Press Enter or click Send to submit your message</span>
-            </div>
+            <AdvisorInput 
+              input={input} 
+              setInput={setInput} 
+              handleSend={handleSend} 
+              isLoading={isLoading} 
+            />
           </CardContent>
         </Card>
       </div>
