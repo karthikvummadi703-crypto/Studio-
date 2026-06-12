@@ -2,31 +2,46 @@
 
 EcoPulse AI is a high-performance carbon footprint tracking platform and AI-driven sustainability advisor built with Next.js, Firebase, and Genkit.
 
-## 🚀 Quickest Deployment Shortcut (CLI)
+## 🚀 Quickest Deployment Process (Vercel CLI)
 
-If the Vercel/Netlify browser UI is stuck or can't find your repo, use the CLI. It's the most reliable "shortcut."
+If you cannot import your repository via the Vercel browser UI, use the **Vercel CLI**. This is the most reliable "shortcut."
 
-### Vercel CLI (Recommended)
-1. **Install:** `npm i -g vercel`
-2. **Login:** `vercel login`
-3. **Deploy:** `vercel` (Follow prompts, then run `vercel --prod` for the final link)
+### 1. Install & Login
+Open your terminal and run:
+```bash
+npm i -g vercel
+vercel login
+```
 
-### Netlify CLI (Backup)
-1. **Install:** `npm i -g netlify-cli`
-2. **Login:** `netlify login`
-3. **Deploy:** `netlify deploy --build` (Follow prompts)
+### 2. Initialize Project
+Run this command in the project root and follow the prompts:
+```bash
+vercel
+```
+*   Set up and deploy? **Yes**
+*   Which scope? **[Your Name]**
+*   Link to existing project? **No**
+*   What's your project's name? **ecopulse-ai**
+*   In which directory? **./**
+*   Want to modify settings? **No**
 
-## ⚙️ Required Environment Variables
+### 3. Add Environment Variables
+Before the app can function, you **must** add your keys in the Vercel Dashboard:
+1.  Go to **Vercel Dashboard > ecopulse-ai > Settings > Environment Variables**.
+2.  Add the following keys exactly:
+    - `NEXT_PUBLIC_FIREBASE_API_KEY`
+    - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+    - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+    - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+    - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+    - `NEXT_PUBLIC_FIREBASE_APP_ID`
+    - `GOOGLE_GENAI_API_KEY` (Get from [Google AI Studio](https://aistudio.google.com/))
 
-Regardless of the platform, you **must** add these in the project settings:
-
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `GOOGLE_GENAI_API_KEY` (Get from [Google AI Studio](https://aistudio.google.com/))
+### 4. Final Production Deploy
+Once the variables are added, run:
+```bash
+vercel --prod
+```
 
 ## Features
 
@@ -45,5 +60,3 @@ npm install
 # Run the development server
 npm run dev
 ```
-
-Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
