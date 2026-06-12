@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Distributed Rate Limiting via Firestore
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || req.ip || 'anonymous';
+    // Robust IP extraction to avoid TypeScript errors and support different proxies
+    const ipHeader = req.headers.get('x-forwarded-for') ?? req.headers.get('x-nf-client-connection-ip') ?? '';
+    const ip = ipHeader.split(',')[0].trim() || 'anonymous';
+    
     const { allowed } = await checkRateLimit(ip, RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
     
     if (!allowed) {
