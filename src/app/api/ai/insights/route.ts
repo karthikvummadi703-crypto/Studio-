@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
     // Distributed Rate Limiting via Firestore
     // Using a robust header-based IP extraction to avoid TypeScript 'ip' property errors
     const forwarded = req.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0].trim() : 'anonymous';
+    const ip = (forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip')) || 'anonymous';
 
-    const { allowed } = await checkRateLimit(ip, RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
+    const { allowed } = await checkRateLimit(ip.trim(), RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
 
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Too many requests' }), {
