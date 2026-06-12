@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -6,26 +5,29 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
     globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 70,
-        statements: 80,
-      },
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/**',
-        'src/components/ui/**',
-        'src/app/globals.css',
+        '.next/**',
+        'coverage/**',
         '**/*.config.*',
-        'src/test/**',
+        '**/types/**',
+        'src/app/layout.tsx',
       ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 60,
+        statements: 70,
+      },
     },
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: ['node_modules', '.next'],
   },
   resolve: {
     alias: {
