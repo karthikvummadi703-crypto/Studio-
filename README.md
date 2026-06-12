@@ -10,28 +10,25 @@ EcoPulse AI is a high-performance carbon footprint tracking platform and AI-driv
 - **Impact Analytics:** Visual tracking of carbon evolution over time.
 - **Gamified Progress:** Earn Green Points and level up your environmental status.
 
-## Deployment Instructions (Easiest Method)
+## Easiest Deployment (Recommended: Vercel)
 
-The fastest way to deploy this application is using **Vercel** or **Netlify**.
+1. **Connect GitHub:** Link your repository to [Vercel](https://vercel.com).
+2. **Set Environment Variables:** Add the following keys in the Vercel Dashboard:
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `GOOGLE_GENAI_API_KEY` (Get from [Google AI Studio](https://aistudio.google.com/))
+3. **Deploy:** Vercel will automatically detect Next.js and deploy.
 
-### 1. Connect Repository
-Link your GitHub repository to your hosting provider.
+## Alternative: Firebase App Hosting
 
-### 2. Configure Environment Variables
-Add the following variables in your hosting provider's dashboard:
-
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `GOOGLE_GENAI_API_KEY` (Get from [Google AI Studio](https://aistudio.google.com/))
-
-### 3. Build & Deploy
-- **Build Command:** `npm run build`
-- **Output Directory:** `.next`
-- **Node Version:** 20.x or higher
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Select **App Hosting** from the sidebar.
+3. Connect your GitHub repository.
+4. Set the same Environment Variables as above in the "Secrets" or "Environment Variables" section.
 
 ## Local Development
 
