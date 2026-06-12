@@ -1,11 +1,11 @@
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  Firestore, 
-  Query, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  Firestore,
+  Query,
   DocumentData,
   QueryConstraint
 } from 'firebase/firestore';
@@ -13,6 +13,7 @@ import { COLLECTIONS } from './constants';
 
 /**
  * Factory for user conversation queries.
+ * Capped at 50 to prevent unbounded Firestore reads.
  * @param db Firestore instance.
  * @param userId Authenticated user ID.
  */
@@ -20,7 +21,8 @@ export function buildUserConversationsQuery(db: Firestore, userId: string): Quer
   return query(
     collection(db, COLLECTIONS.AI_CONVERSATIONS),
     where('userId', '==', userId),
-    orderBy('updatedAt', 'desc')
+    orderBy('updatedAt', 'desc'),
+    limit(50)
   );
 }
 
@@ -55,10 +57,10 @@ export function buildUserCalculatorRecordsQuery(
     where('userId', '==', userId),
     orderBy('timestamp', sortOrder)
   ];
-  
+
   if (limitCount) {
     constraints.push(limit(limitCount));
   }
-  
+
   return query(collection(db, COLLECTIONS.CALCULATOR_RECORDS), ...constraints);
 }
