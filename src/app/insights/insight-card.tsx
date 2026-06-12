@@ -2,8 +2,22 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LucideIcon } from 'lucide-react';
 
-export default function InsightCategoryCard({ title, icon: Icon, items }: any) {
+interface Recommendation {
+  action: string;
+  impactLevel: string;
+  difficultyLevel: string;
+  estimatedCarbonSavings: string;
+}
+
+interface InsightCategoryCardProps {
+  title: string;
+  icon: LucideIcon;
+  items: Recommendation[];
+}
+
+export default function InsightCategoryCard({ title, icon: Icon, items }: InsightCategoryCardProps) {
   if (!items || items.length === 0) return null;
   return (
     <Card className="glass-card border-none">
@@ -16,7 +30,7 @@ export default function InsightCategoryCard({ title, icon: Icon, items }: any) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {items.map((item: any, idx: number) => (
+        {items.map((item, idx) => (
           <div key={idx} className="p-4 rounded-xl bg-zinc-50 border border-zinc-100 space-y-2">
             <div className="flex justify-between items-start">
               <p className="font-bold text-sm text-foreground">{item.action}</p>

@@ -11,6 +11,7 @@ import { getDocs } from 'firebase/firestore';
 import { GenerateReductionPlanOutput } from '@/ai/flows/generate-reduction-plan';
 import Link from 'next/link';
 import { buildUserCalculatorRecordsQuery } from '@/lib/firestore-queries';
+import { getErrorMessage } from '@/lib/handle-error';
 
 const InsightCategoryCard = dynamic(() => import('./insight-card'), { ssr: false });
 
@@ -58,8 +59,8 @@ export default function InsightsPage() {
       
       const result = await response.json();
       setInsight(result);
-    } catch (e) {
-      // Silent fail in production logging
+    } catch (error: unknown) {
+      console.error('[Insights] Generation failed:', getErrorMessage(error));
     } finally {
       setLoading(false);
     }

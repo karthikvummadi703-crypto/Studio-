@@ -26,6 +26,7 @@ import { COLLECTIONS, APP_METADATA, DEMO_USER, IS_DEMO_KEY } from '@/lib/constan
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { setSessionCookieAction } from '@/app/actions/session';
 import { LEVEL_CONFIG } from '@/lib/levels';
+import { FirebaseError } from 'firebase/app';
 
 /**
  * Login page with email/password, Google OAuth, Forgot Password link, and Demo Mode.
@@ -53,11 +54,12 @@ export default function LoginPage() {
       sessionStorage.removeItem(IS_DEMO_KEY);
       await handleSession(userCredential.user);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const code = error instanceof FirebaseError ? error.code : 'unknown';
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: getAuthErrorMessage(error.code),
+        description: getAuthErrorMessage(code),
       });
     } finally {
       setLoading(false);
@@ -98,11 +100,12 @@ export default function LoginPage() {
       sessionStorage.removeItem(IS_DEMO_KEY);
       await handleSession(user);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const code = error instanceof FirebaseError ? error.code : 'unknown';
       toast({
         variant: 'destructive',
         title: 'Google Login Failed',
-        description: getAuthErrorMessage(error.code),
+        description: getAuthErrorMessage(code),
       });
     } finally {
       setGoogleLoading(false);
@@ -141,7 +144,7 @@ export default function LoginPage() {
       sessionStorage.setItem(IS_DEMO_KEY, 'true');
       await handleSession(user);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: 'Demo Access Failed',

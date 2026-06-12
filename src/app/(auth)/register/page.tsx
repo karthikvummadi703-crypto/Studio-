@@ -20,6 +20,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { setSessionCookieAction } from '@/app/actions/session';
+import { FirebaseError } from 'firebase/app';
 
 /**
  * Registration page component for creating new environment nodes.
@@ -141,12 +142,13 @@ export default function RegisterPage() {
       
       toast({ title: "Node Registered", description: "Welcome to EcoPulse AI!" });
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[Register] Error:', error);
+      const code = error instanceof FirebaseError ? error.code : 'unknown';
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: getAuthErrorMessage(error.code),
+        description: getAuthErrorMessage(code),
       });
     } finally {
       setLoading(false);

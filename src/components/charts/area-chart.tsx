@@ -12,11 +12,21 @@ import {
   Line
 } from 'recharts';
 
+interface ChartDataPoint {
+  date: string;
+  emissions: string | number;
+  goal: number;
+}
+
+interface AreaChartComponentProps {
+  data: ChartDataPoint[];
+}
+
 /**
  * Enhanced AreaChart component with accessibility support.
  * Wraps the chart in a figure with a visually-hidden caption for screen readers.
  */
-export default function AreaChartComponent({ data }: { data: any[] }) {
+export default function AreaChartComponent({ data }: AreaChartComponentProps) {
   const latestValue = useMemo(() => {
     if (!data || data.length === 0) return '0';
     return data[data.length - 1].emissions;

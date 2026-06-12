@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, memo } from 'react';
@@ -23,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { CHALLENGES } from '@/lib/challenges';
 import { getLevelFromPoints } from '@/lib/levels';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
-import type { UserProfile, CarbonRecord } from '@/types';
+import type { CarbonRecord } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface HeroMetricProps {
