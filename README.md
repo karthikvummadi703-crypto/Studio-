@@ -2,46 +2,29 @@
 
 EcoPulse AI is a high-performance carbon footprint tracking platform and AI-driven sustainability advisor built with Next.js, Firebase, and Genkit.
 
-## 🚀 Quickest Deployment Process (Vercel CLI)
+## 📱 Tablet/Browser Deployment (No Laptop Required)
 
-If you cannot import your repository via the Vercel browser UI, use the **Vercel CLI**. This is the most reliable "shortcut."
+If you are on a tablet and cannot use a terminal, follow this exact browser-only process:
 
-### 1. Install & Login
-Open your terminal and run:
-```bash
-npm i -g vercel
-vercel login
-```
+### 1. Fix the "Cannot Import" Issue
+If you don't see your repository in Vercel/Netlify, it is a permission problem:
+1.  In the Vercel "Import Project" screen, click **"Adjust GitHub App Permissions"**.
+2.  In the GitHub popup, scroll down to **Repository access**.
+3.  Select **"All repositories"** or select your `ecopulse-ai` repo manually.
+4.  Click **Save**. The repo will now show up in Vercel.
 
-### 2. Initialize Project
-Run this command in the project root and follow the prompts:
-```bash
-vercel
-```
-*   Set up and deploy? **Yes**
-*   Which scope? **[Your Name]**
-*   Link to existing project? **No**
-*   What's your project's name? **ecopulse-ai**
-*   In which directory? **./**
-*   Want to modify settings? **No**
-
-### 3. Add Environment Variables
-Before the app can function, you **must** add your keys in the Vercel Dashboard:
-1.  Go to **Vercel Dashboard > ecopulse-ai > Settings > Environment Variables**.
-2.  Add the following keys exactly:
+### 2. Configure & Deploy
+1.  Select your repo and click **Import**.
+2.  **CRITICAL:** Expand the **Environment Variables** section.
+3.  Add the following keys (copy values from your Firebase/AI Studio consoles):
     - `NEXT_PUBLIC_FIREBASE_API_KEY`
     - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
     - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
     - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
     - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
     - `NEXT_PUBLIC_FIREBASE_APP_ID`
-    - `GOOGLE_GENAI_API_KEY` (Get from [Google AI Studio](https://aistudio.google.com/))
-
-### 4. Final Production Deploy
-Once the variables are added, run:
-```bash
-vercel --prod
-```
+    - `GOOGLE_GENAI_API_KEY` (From [Google AI Studio](https://aistudio.google.com/))
+4.  Click **Deploy**. Vercel will build and host your site automatically.
 
 ## Features
 
@@ -51,7 +34,7 @@ vercel --prod
 - **Impact Analytics:** Visual tracking of carbon evolution over time.
 - **Gamified Progress:** Earn Green Points and level up your environmental status.
 
-## Local Development
+## Local Development (If using a laptop later)
 
 ```bash
 # Install dependencies
