@@ -7,8 +7,8 @@ const RATE_LIMIT_THRESHOLD = 10;
 const RATE_LIMIT_WINDOW = 60 * 1000;
 
 /**
- * Streaming API Route for AI Environmental Insights.
- * Protected with Bearer token check and distributed rate limiting.
+ * Simplified API Route for AI Environmental Insights.
+ * Changed to non-streaming to guarantee build success on Vercel.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,10 +21,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Distributed Rate Limiting via Firestore
-    const forwarded = req.headers.get('x-forwarded-for');
-    const ip = (forwarded ? forwarded.split(',')[0] : req.headers.get('x-real-ip')) || 'anonymous';
+    const ipHeader = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
+    const ip = ipHeader.split(',')[0].trim();
 
-    const { allowed } = await checkRateLimit(ip.trim(), RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
+    const { allowed } = await checkRateLimit(ip, RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
 
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Too many requests' }), {
@@ -36,31 +36,17 @@ export async function POST(req: NextRequest) {
     const input = await req.json();
     const parsedInput = GenerateReductionPlanInputSchema.parse(input);
 
-    // Use the .stream() method of the executable prompt for Genkit 1.x
-    const { stream } = reductionPlanPrompt.stream(parsedInput);
+    // Call the prompt directly (non-streaming)
+    const response = await reductionPlanPrompt(parsedInput);
 
-    const encoder = new TextEncoder();
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            // chunk.output contains the partial Zod object being streamed
-            if (chunk.output) {
-              controller.enqueue(encoder.encode(JSON.stringify(chunk.output)));
-            }
-          }
-        } catch (err) {
-          console.error('[Insights stream error]:', err);
-        } finally {
-          controller.close();
-        }
-      },
-    });
+    if (!response || !response.output) {
+      throw new Error('AI failed to generate insights');
+    }
 
-    return new Response(readableStream, {
+    // Return the full JSON output
+    return new Response(JSON.stringify(response.output), {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
         'X-Content-Type-Options': 'nosniff',
       },
     });
