@@ -25,6 +25,28 @@
     --ring: 142 76% 40%;
     --radius: 2rem;
   }
+
+  .dark {
+    --background: 145 20% 8%;
+    --foreground: 140 40% 95%;
+    --card: 145 20% 10%;
+    --card-foreground: 140 40% 95%;
+    --popover: 145 20% 10%;
+    --popover-foreground: 140 40% 95%;
+    --primary: 142 76% 45%;
+    --primary-foreground: 140 40% 95%;
+    --secondary: 145 20% 15%;
+    --secondary-foreground: 140 40% 95%;
+    --muted: 145 20% 12%;
+    --muted-foreground: 145 10% 65%;
+    --accent: 142 76% 45%;
+    --accent-foreground: 140 40% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 140 40% 95%;
+    --border: 145 20% 18%;
+    --input: 145 20% 18%;
+    --ring: 142 76% 45%;
+  }
 }
 
 @layer base {
@@ -37,17 +59,15 @@
   }
 
   body {
-    @apply text-foreground;
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%);
+    @apply text-foreground bg-background;
     min-height: 100vh;
     font-feature-settings: "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
   }
 }
 
-/* Solid high-performance cards without expensive backdrop-blur */
 .glass-card {
-  @apply bg-white border border-zinc-100 shadow-sm transition-all duration-200;
+  @apply bg-card border border-border shadow-sm transition-all duration-200;
 }
 
 .emerald-glow {
@@ -55,7 +75,7 @@
 }
 
 .nav-active {
-  @apply bg-primary text-white shadow-xl shadow-primary/25 border-none scale-[1.02];
+  @apply bg-primary text-primary-foreground shadow-xl shadow-primary/25 border-none scale-[1.02];
 }
 
 .animate-spin {

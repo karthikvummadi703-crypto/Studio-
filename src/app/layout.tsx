@@ -53,7 +53,7 @@ export default function RootLayout({
       <body className="font-body text-foreground min-h-screen relative overflow-x-hidden selection:bg-primary/30">
         <a 
           href="#main-content" 
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-6 focus:py-3 focus:bg-primary focus:text-white focus:rounded-xl focus:font-bold focus:shadow-2xl focus:ring-4 focus:ring-primary/20"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-primary focus:rounded-lg focus:shadow-lg"
         >
           Skip to main content
         </a>
