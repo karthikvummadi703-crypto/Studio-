@@ -13,7 +13,8 @@ import { AdvisorInput } from './advisor-input';
 import type { UserProfile, ChatMessage } from '@/types';
 
 /**
- * Floating persistent AI assistant for quick sustainability queries.
+ * Floating persistent AI assistant.
+ * Streams AI responses token-by-token for a natural typewriter effect.
  */
 export function FloatingAIAdvisor() {
   const { user } = useUser();
@@ -24,7 +25,10 @@ export function FloatingAIAdvisor() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const profileRef = useMemo(() => (user && db ? doc(db, 'users', user.uid) : null), [user, db]);
+  const profileRef = useMemo(
+    () => (user && db ? doc(db, 'users', user.uid) : null),
+    [user, db]
+  );
   const { data: profile } = useDoc<UserProfile>(profileRef);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -53,6 +57,13 @@ export function FloatingAIAdvisor() {
       setInput('');
       setIsLoading(true);
 
+      // Optimistically add an empty AI message that we will stream into.
+      const aiMsgIndex = messages.length + 1;
+      setMessages((prev) => [
+        ...prev,
+        { role: 'ai', text: '', timestamp: new Date().toISOString() },
+      ]);
+
       try {
         const prunedHistory = messages.slice(-3).map((m) => ({ role: m.role, text: m.text }));
         const idToken = await user.getIdToken();
@@ -76,22 +87,42 @@ export function FloatingAIAdvisor() {
         });
 
         if (!response.ok) throw new Error(`AI request failed: ${response.status}`);
+        if (!response.body) throw new Error('No response body');
 
-        const responseText = await response.text();
-        setMessages((prev) => [
-          ...prev,
-          { role: 'ai', text: responseText, timestamp: new Date().toISOString() },
-        ]);
+        // Read the stream and append chunks to the last AI message.
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+
+        while (!done) {
+          const { value, done: streamDone } = await reader.read();
+          done = streamDone;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: !done });
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last.role === 'ai') {
+                updated[updated.length - 1] = {
+                  ...last,
+                  text: last.text + chunk,
+                };
+              }
+              return updated;
+            });
+          }
+        }
       } catch (err) {
         console.error('[FloatingAdvisor] Error:', err);
-        setMessages((prev) => [
-          ...prev,
-          {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
             role: 'ai',
             text: "I'm sorry, I couldn't get a response. Please try again.",
             timestamp: new Date().toISOString(),
-          },
-        ]);
+          };
+          return updated;
+        });
       } finally {
         setIsLoading(false);
       }
@@ -150,7 +181,11 @@ export function FloatingAIAdvisor() {
                 <AdvisorMessage key={i} message={msg} />
               ))}
               {isLoading && (
-                <div className="flex justify-start mt-2" aria-live="polite" aria-label="Advisor is thinking">
+                <div
+                  className="flex justify-start mt-2"
+                  aria-live="polite"
+                  aria-label="Advisor is thinking"
+                >
                   <Spinner className="h-5 w-5 text-primary" />
                 </div>
               )}
