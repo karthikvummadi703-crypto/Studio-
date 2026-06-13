@@ -6,16 +6,16 @@ import { GlobalNavigation } from '@/components/layout';
 import { Space_Grotesk, Inter } from 'next/font/google';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const spaceGrotesk = Space_Grotesk({ 
-  subsets: ['latin'], 
-  variable: '--font-headline', 
-  display: 'swap' 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-headline',
+  display: 'swap',
 });
 
-const inter = Inter({ 
-  subsets: ['latin'], 
-  variable: '--font-body', 
-  display: 'swap' 
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -25,8 +25,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'EcoPulse AI | Premium Carbon Analytics' ,
-  description: 'High-performance carbon footprint tracking and AI-driven sustainability strategies.',
+  title: 'EcoPulse AI | Premium Carbon Analytics',
+  description:
+    'High-performance carbon footprint tracking and AI-driven sustainability strategies.',
   keywords: ['sustainability', 'carbon footprint', 'AI advisor', 'green points', 'eco-friendly'],
   authors: [{ name: 'EcoPulse AI Team' }],
   openGraph: {
@@ -37,32 +38,27 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root Layout optimized with self-hosted fonts and stable structural landmarks.
+ * Root layout — provides fonts, global providers, and the skip-to-content link.
+ * The <main id="main-content"> target lives inside GlobalNavigation.
  */
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html 
-      lang="en" 
-      className={`${inter.variable} ${spaceGrotesk.variable} antialiased`} 
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="font-body text-foreground min-h-screen relative overflow-x-hidden selection:bg-primary/30">
-        <a 
-          href="#main-content" 
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-primary focus:rounded-lg focus:shadow-lg"
-        >
+        {/* Skip link — invisible until focused by keyboard; targets <main id="main-content"> */}
+        <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
         <FirebaseClientProvider>
           <ErrorBoundary>
             <GlobalNavigation>
-              <div id="main-content">
-                {children}
-              </div>
+              {children}
             </GlobalNavigation>
           </ErrorBoundary>
           <Toaster />
