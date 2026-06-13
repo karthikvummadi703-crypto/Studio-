@@ -1,77 +1,92 @@
 'use server';
 /**
- * @fileOverview A Genkit flow for generating personalized carbon footprint analysis.
+ * @fileOverview Genkit flow — personalised carbon footprint analysis.
  *
- * - generateCarbonAnalysis - A function that analyzes user carbon footprint data.
+ * Public API:
+ *   generateCarbonAnalysis(input)         Main callable
+ *   GenerateCarbonAnalysisInputSchema     Zod schema (exported for tests)
+ *   GenerateCarbonAnalysisInput           Input type
+ *   GenerateCarbonAnalysisOutput          Output type
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const GenerateCarbonAnalysisInputSchema = z.object({
-  userName: z.string().min(1).describe('The name of the user.'),
-  totalEmissions: z.number().nonnegative().describe('The user\'s total carbon emissions in kgCO2e.'),
-  emissionsBreakdown: z.object({
-    transportation: z.number().nonnegative().describe('Carbon emissions from transportation in kgCO2e.'),
-    homeEnergy: z.number().nonnegative().describe('Carbon emissions from home energy in kgCO2e.'),
-    food: z.number().nonnegative().describe('Carbon emissions from food consumption in kgCO2e.'),
-    lifestyle: z.number().nonnegative().describe('Carbon emissions from lifestyle choices in kgCO2e.'),
-  }).describe('A breakdown of carbon emissions by category.'),
+export const GenerateCarbonAnalysisInputSchema = z.object({
+  userName: z.string().min(1).describe('Display name of the user.'),
+  totalEmissions: z
+    .number()
+    .nonnegative()
+    .describe('Total carbon emissions in kgCO2e.'),
+  emissionsBreakdown: z
+    .object({
+      transportation: z.number().nonnegative().describe('kgCO2e from transportation.'),
+      homeEnergy:     z.number().nonnegative().describe('kgCO2e from home energy.'),
+      food:           z.number().nonnegative().describe('kgCO2e from food.'),
+      lifestyle:      z.number().nonnegative().describe('kgCO2e from lifestyle choices.'),
+    })
+    .describe('Per-category emissions breakdown.'),
 });
+
 export type GenerateCarbonAnalysisInput = z.infer<typeof GenerateCarbonAnalysisInputSchema>;
 
 const GenerateCarbonAnalysisOutputSchema = z.object({
-  personalizedAnalysis: z.string().describe('A personalized explanation of the user\'s current emissions.'),
-  mainEmissionSources: z.array(z.string()).describe('A list of the top 2-3 main emission sources for the user.'),
-  highestImpactCategory: z.string().describe('The single category with the highest carbon impact.'),
+  personalizedAnalysis: z
+    .string()
+    .describe('Personalised explanation of the user\'s current emissions.'),
+  mainEmissionSources: z
+    .array(z.string())
+    .describe('Top 2–3 emission sources for this user.'),
+  highestImpactCategory: z
+    .string()
+    .describe('The single category with the highest carbon impact.'),
 });
+
 export type GenerateCarbonAnalysisOutput = z.infer<typeof GenerateCarbonAnalysisOutputSchema>;
 
-/**
- * Prompt definition for carbon analysis.
- */
-const prompt = ai.definePrompt({
+/** Prompt definition — separated from the flow for independent testability. */
+const carbonAnalysisPrompt = ai.definePrompt({
   name: 'carbonAnalysisPrompt',
-  input: { schema: GenerateCarbonAnalysisInputSchema },
+  input:  { schema: GenerateCarbonAnalysisInputSchema },
   output: { schema: GenerateCarbonAnalysisOutputSchema },
-  prompt: `You are an expert sustainability analyst. Your goal is to help users understand their carbon footprint.
+  prompt: `You are an expert sustainability analyst helping users understand their carbon footprint.
 
-Analyze the following carbon footprint data for user '{{{userName}}}':
+Analyse the following data for user '{{{userName}}}':
 
 Total Emissions: {{{totalEmissions}}} kgCO2e
-Emissions Breakdown:
+Breakdown:
 - Transportation: {{{emissionsBreakdown.transportation}}} kgCO2e
-- Home Energy: {{{emissionsBreakdown.homeEnergy}}} kgCO2e
-- Food: {{{emissionsBreakdown.food}}} kgCO2e
-- Lifestyle: {{{emissionsBreakdown.lifestyle}}} kgCO2e
+- Home Energy:    {{{emissionsBreakdown.homeEnergy}}} kgCO2e
+- Food:           {{{emissionsBreakdown.food}}} kgCO2e
+- Lifestyle:      {{{emissionsBreakdown.lifestyle}}} kgCO2e
 
-Provide a personalized explanation of their current emissions, highlighting their main emission sources, so they can understand where their impact is highest. Identify the top 2-3 main emission sources and the single highest impact category.
-`,
+Provide a personalised explanation highlighting the top 2–3 emission sources and the single highest-impact category. Keep the tone constructive and encouraging.`,
 });
 
-/**
- * Genkit flow to generate carbon analysis.
- */
+/** Genkit flow wrapping the prompt for type-safe, observable invocation. */
 const generateCarbonAnalysisFlow = ai.defineFlow(
   {
     name: 'generateCarbonAnalysisFlow',
-    inputSchema: GenerateCarbonAnalysisInputSchema,
+    inputSchema:  GenerateCarbonAnalysisInputSchema,
     outputSchema: GenerateCarbonAnalysisOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const { output } = await carbonAnalysisPrompt(input);
     if (!output) {
-      throw new Error('Analysis generation failed: Empty output from prompt');
+      throw new Error('Carbon analysis generation failed: empty output from model.');
     }
     return output;
   }
 );
 
 /**
- * Analyzes user carbon footprint data using AI.
- * @param input User emissions data.
- * @returns AI generated analysis and breakdown.
+ * Analyses user carbon footprint data using the Gemini model.
+ *
+ * @param input - Validated user emissions data.
+ * @returns       AI-generated analysis, sources, and highest-impact category.
  */
-export async function generateCarbonAnalysis(input: GenerateCarbonAnalysisInput): Promise<GenerateCarbonAnalysisOutput> {
+export async function generateCarbonAnalysis(
+  input: GenerateCarbonAnalysisInput
+): Promise<GenerateCarbonAnalysisOutput> {
   return generateCarbonAnalysisFlow(input);
 }
