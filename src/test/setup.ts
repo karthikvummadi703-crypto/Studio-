@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock matchMedia
+// ── Browser API stubs ────────────────────────────────────────────────────────
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -16,63 +17,91 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock Next.js navigation
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+// ── Next.js stubs ────────────────────────────────────────────────────────────
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
+    push:     vi.fn(),
+    replace:  vi.fn(),
     prefetch: vi.fn(),
-    back: vi.fn(),
+    back:     vi.fn(),
   }),
-  usePathname: () => '/',
+  usePathname:    () => '/',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock Firebase config to avoid real network calls in tests
+vi.mock('next/dynamic', () => ({
+  default: (fn: () => Promise<{ default: unknown }>) => fn,
+}));
+
+// ── Firebase stubs ───────────────────────────────────────────────────────────
+
 vi.mock('@/firebase/config', () => ({
-  app: {},
+  app:  {},
   auth: { currentUser: null },
-  db: {},
+  db:   {},
 }));
 
-// Mock Firebase auth
 vi.mock('firebase/auth', () => ({
-  signInWithEmailAndPassword: vi.fn(),
+  signInWithEmailAndPassword:     vi.fn(),
   createUserWithEmailAndPassword: vi.fn(),
-  signInWithPopup: vi.fn(),
-  signInAnonymously: vi.fn(),
-  signOut: vi.fn(),
-  updateProfile: vi.fn(),
-  sendPasswordResetEmail: vi.fn(),
-  onAuthStateChanged: vi.fn((auth, cb) => { cb(null); return vi.fn(); }),
-  GoogleAuthProvider: vi.fn(),
-  getAuth: vi.fn(),
+  signInWithPopup:                vi.fn(),
+  signInAnonymously:              vi.fn(),
+  signOut:                        vi.fn(),
+  updateProfile:                  vi.fn(),
+  sendPasswordResetEmail:         vi.fn(),
+  onAuthStateChanged:             vi.fn((_auth: unknown, cb: (u: null) => void) => { cb(null); return vi.fn(); }),
+  GoogleAuthProvider:             vi.fn(),
+  getAuth:                        vi.fn(),
+  FirebaseError: class FirebaseError extends Error {
+    constructor(public code: string, message: string) { super(message); }
+  },
 }));
 
-// Mock Firebase Firestore
 vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
-  setDoc: vi.fn().mockResolvedValue(undefined),
-  addDoc: vi.fn().mockResolvedValue({ id: 'mock-id' }),
-  getFirestore: vi.fn(),
-  collection: vi.fn(),
+  doc:             vi.fn(),
+  setDoc:          vi.fn().mockResolvedValue(undefined),
+  addDoc:          vi.fn().mockResolvedValue({ id: 'mock-id' }),
+  updateDoc:       vi.fn().mockResolvedValue(undefined),
+  deleteDoc:       vi.fn().mockResolvedValue(undefined),
+  getFirestore:    vi.fn(),
+  collection:      vi.fn(),
   serverTimestamp: vi.fn(() => new Date()),
-  onSnapshot: vi.fn(() => vi.fn()),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  writeBatch: vi.fn(() => ({ set: vi.fn(), update: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) })),
-  increment: vi.fn(),
+  onSnapshot:      vi.fn(() => vi.fn()),
+  query:           vi.fn(),
+  where:           vi.fn(),
+  orderBy:         vi.fn(),
+  limit:           vi.fn(),
+  writeBatch:      vi.fn(() => ({
+    set:    vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  })),
+  increment:      vi.fn(),
+  runTransaction: vi.fn(),
 }));
 
-// Mock @/firebase provider hooks
 vi.mock('@/firebase', () => ({
-  useUser: () => ({ user: null, isLoading: false }),
-  useFirestore: () => ({}),
-  useDoc: () => ({ data: null, isLoading: false, error: null }),
+  useUser:       () => ({ user: null, isLoading: false, isDemo: false }),
+  useFirestore:  () => ({}),
+  useDoc:        () => ({ data: null, isLoading: false, error: null }),
   useCollection: () => ({ data: [], isLoading: false, error: null }),
-  useAuth: () => ({}),
-  auth: {},
-  db: {},
-  FirebaseClientProvider: ({ children }: any) => children,
+  useFirebase:   () => ({ profile: null, isProfileLoading: false }),
+  useAuth:       () => ({}),
+  auth:          {},
+  db:            {},
+  FirebaseClientProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
