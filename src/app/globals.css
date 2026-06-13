@@ -10,19 +10,19 @@
     --card-foreground: 145 50% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 145 50% 10%;
-    --primary: 142 76% 40%;
+    --primary: 142 76% 36%;
     --primary-foreground: 0 0% 100%;
     --secondary: 140 40% 95%;
     --secondary-foreground: 145 50% 15%;
     --muted: 140 20% 96%;
-    --muted-foreground: 145 15% 45%;
-    --accent: 142 76% 40%;
+    --muted-foreground: 145 15% 40%;
+    --accent: 142 76% 36%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 55%;
     --destructive-foreground: 0 0% 98%;
-    --border: 140 25% 92%;
-    --input: 140 25% 92%;
-    --ring: 142 76% 40%;
+    --border: 140 25% 88%;
+    --input: 140 25% 88%;
+    --ring: 142 76% 36%;
     --radius: 2rem;
   }
 
@@ -34,92 +34,54 @@
     --popover: 145 20% 10%;
     --popover-foreground: 140 40% 95%;
     --primary: 142 76% 45%;
-    --primary-foreground: 140 40% 95%;
+    --primary-foreground: 145 20% 8%;
     --secondary: 145 20% 15%;
     --secondary-foreground: 140 40% 95%;
     --muted: 145 20% 12%;
-    --muted-foreground: 145 10% 65%;
+    --muted-foreground: 145 10% 68%;
     --accent: 142 76% 45%;
-    --accent-foreground: 140 40% 95%;
-    --destructive: 0 62.8% 30.6%;
+    --accent-foreground: 145 20% 8%;
+    --destructive: 0 62.8% 45%;
     --destructive-foreground: 140 40% 95%;
-    --border: 145 20% 18%;
-    --input: 145 20% 18%;
+    --border: 145 20% 20%;
+    --input: 145 20% 20%;
     --ring: 142 76% 45%;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-none;
-  }
-  
-  *:focus-visible {
-    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
-  }
-
-  body {
-    @apply text-foreground bg-background;
-    min-height: 100vh;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    text-rendering: optimizeLegibility;
-  }
-}
-
-.glass-card {
-  @apply bg-card border border-border shadow-sm transition-all duration-200;
-}
-
-.emerald-glow {
-  text-shadow: 0 0 35px hsl(var(--primary) / 0.4);
-}
-
-.nav-active {
-  @apply bg-primary text-primary-foreground shadow-xl shadow-primary/25 border-none scale-[1.02];
-}
-
-.animate-spin {
-  will-change: transform;
-}
-
-.animate-pulse {
-  will-change: opacity;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.01);
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(140 20% 88%);
-  border-radius: 12px;
-  border: 3px solid rgba(255,255,255,0.8);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(140 30% 80%);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(140 30% 90%);
-  border-radius: 10px;
-}
-
-.sr-only {
+/* ─── Skip-to-content link ──────────────────────────────────────────────── */
+.skip-link {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  top: -9999px;
+  left: 8px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 0 0 8px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ─── Focus-visible ring for keyboard users ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Respect prefers-reduced-motion ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
