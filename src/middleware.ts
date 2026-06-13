@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+/**
+ * Routes that require an authenticated session cookie.
+ * Uses startsWith() so all nested routes are also protected automatically.
+ */
 const PROTECTED_ROUTES = [
   '/dashboard',
   '/calculator',
@@ -11,20 +15,26 @@ const PROTECTED_ROUTES = [
   '/progress',
   '/recommendations',
   '/settings',
-];
-
-const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
+] as const;
 
 /**
- * Server-side authentication guard.
- * Redirects unauthenticated users to /login and authenticated users away from auth routes.
+ * Routes that authenticated users should be redirected away from.
  */
-export function middleware(request: NextRequest) {
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password'] as const;
+
+/**
+ * Server-side authentication guard running on the Next.js edge runtime.
+ *
+ * Security note: cookie-presence check only — actual JWT verification
+ * is performed in each API route. The __session cookie is HttpOnly and
+ * set server-side so it cannot be forged from client JavaScript.
+ */
+export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get('__session')?.value;
 
-  const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  const isAuthRoute = (AUTH_ROUTES as readonly string[]).includes(pathname);
 
   if (isProtected && !session) {
     const loginUrl = new URL('/login', request.url);
@@ -36,7 +46,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Prevent CDN from caching authenticated page responses.
+  if (isProtected) {
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+  }
+
+  return response;
 }
 
 export const config = {
