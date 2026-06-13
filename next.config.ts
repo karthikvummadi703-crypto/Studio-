@@ -2,7 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   typescript: {
-    // We handle errors in the editor/pre-build to ensure production builds are smooth
     ignoreBuildErrors: false,
   },
   eslint: {
@@ -10,7 +9,6 @@ const nextConfig: NextConfig = {
   },
   compress: true,
   poweredByHeader: false,
-  // Critical for Genkit/Telemetry on Vercel/Netlify
   serverExternalPackages: ['genkit', '@genkit-ai/google-genai', '@opentelemetry/sdk-node'],
   async headers() {
     return [
@@ -20,6 +18,11 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
           {
             key: 'Content-Security-Policy',
             value: [
@@ -30,6 +33,8 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://placehold.co https://images.unsplash.com https://picsum.photos https://lh3.googleusercontent.com",
               "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com",
               "frame-src https://*.firebaseapp.com",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join('; '),
           },
         ],
@@ -43,7 +48,7 @@ const nextConfig: NextConfig = {
       'firebase',
       'date-fns',
       'zod',
-      '@/components/ui'
+      '@/components/ui',
     ],
   },
   images: {
