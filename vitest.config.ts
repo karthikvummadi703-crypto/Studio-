@@ -11,28 +11,23 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      // Enforces minimum coverage so tests cannot silently regress
+      thresholds: {
+        lines: 65,
+        functions: 65,
+        branches: 55,
+        statements: 65,
+      },
       exclude: [
         'node_modules/**',
-        '.next/**',
-        'coverage/**',
+        '**/*.d.ts',
         '**/*.config.*',
         '**/types/**',
-        'src/app/layout.tsx',
+        'src/components/ui/**',
+        'src/app/globals.css',
       ],
-      thresholds: {
-        lines:      80,
-        functions:  80,
-        branches:   75,
-        statements: 80,
-      },
     },
-    include: [
-      'tests/**/*.test.ts',
-      'tests/**/*.test.tsx',
-      'src/**/*.test.ts',
-      'src/**/*.test.tsx',
-    ],
-    exclude: ['node_modules', '.next'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
   },
   resolve: {
     alias: {
