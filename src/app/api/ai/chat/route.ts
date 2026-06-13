@@ -1,63 +1,39 @@
+/**
+ * @fileOverview POST /api/ai/chat
+ * Auth: verified Firebase ID token. Rate limit: 15 req/60s per IP.
+ * Unified with withApiGuard for consistent auth + error handling.
+ */
 import { advisorPrompt, AIAdvisorChatInputSchema } from '@/ai/flows/ai-advisor-chat';
 import { NextRequest } from 'next/server';
-import { getErrorMessage } from '@/lib/handle-error';
-import { checkRateLimit } from '@/lib/rate-limiter';
+import { withApiGuard } from '@/lib/api-handler';
 
-const RATE_LIMIT_THRESHOLD = 15;
-const RATE_LIMIT_WINDOW = 60 * 1000;
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-/**
- * Simplified API Route for AI Advisor.
- * Changed to non-streaming to guarantee build success on Vercel.
- */
-export async function POST(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Missing or invalid token' }), { 
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
+export const POST = withApiGuard(
+  async (req: NextRequest) => {
+    let parsedInput: ReturnType<typeof AIAdvisorChatInputSchema.parse>;
+    try {
+      const body = await req.json();
+      parsedInput = AIAdvisorChatInputSchema.parse(body);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid request body.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Distributed Rate Limiting via Firestore
-    const ipHeader = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'anonymous';
-    const ip = ipHeader.split(',')[0].trim();
-    
-    const { allowed } = await checkRateLimit(ip, RATE_LIMIT_THRESHOLD, RATE_LIMIT_WINDOW);
-    
-    if (!allowed) {
-      return new Response(JSON.stringify({ error: 'Too many requests' }), { 
-        status: 429,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Retry-After': '60'
-        }
-      });
-    }
-
-    const input = await req.json();
-    const parsedInput = AIAdvisorChatInputSchema.parse(input);
-
-    // Call the prompt directly (non-streaming)
     const response = await advisorPrompt(parsedInput);
-
-    if (!response || !response.output) {
-      throw new Error('AI failed to generate a response');
+    if (!response?.output) {
+      throw new Error('AI failed to generate a response — empty output.');
     }
 
-    // Return the response text directly
     return new Response(response.output.responseText, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'X-Content-Type-Options': 'nosniff'
+        'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch (error: unknown) {
-    console.error('[AI Chat Route Error]:', error);
-    return new Response(JSON.stringify({ error: getErrorMessage(error) }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
+  },
+  { rateLimit: 15, windowMs: 60 * 1000 }
+);
