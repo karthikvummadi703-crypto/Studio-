@@ -11,12 +11,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      // Enforces minimum coverage so tests cannot silently regress
       thresholds: {
-        lines: 65,
-        functions: 65,
-        branches: 55,
-        statements: 65,
+        lines:      80,
+        functions:  80,
+        branches:   75,
+        statements: 80,
       },
       exclude: [
         'node_modules/**',
@@ -27,6 +26,12 @@ export default defineConfig({
         'src/app/globals.css',
       ],
     },
+    include: [
+      'tests/**/*.test.ts',
+      'tests/**/*.test.tsx',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+    ],
     exclude: ['**/node_modules/**', '**/dist/**'],
   },
   resolve: {
