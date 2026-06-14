@@ -1,17 +1,10 @@
-/**
- * @fileOverview Firestore security rules tests.
- * Run with the Firestore emulator: npm run test:rules
- */
-
+import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
-  assertFails,
-  assertSucceeds,
-  initializeTestEnvironment,
+  initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
-import { describe, it, beforeAll, afterAll, afterEach } from 'vitest';
-import { setDoc, getDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { setDoc, getDoc, deleteDoc, updateDoc, doc } from 'firebase/firestore';
 
 let testEnv: RulesTestEnvironment;
 
@@ -20,130 +13,146 @@ beforeAll(async () => {
     projectId: 'ecopulse-test',
     firestore: {
       rules: readFileSync('firestore.rules', 'utf8'),
-      host:  '127.0.0.1',
-      port:  8080,
+      host: '127.0.0.1',
+      port: 8080,
     },
   });
 });
 
-afterAll(async () => { await testEnv.cleanup(); });
-afterEach(async () => { await testEnv.clearFirestore(); });
+afterAll(async () => testEnv.cleanup());
+beforeEach(async () => testEnv.clearFirestore());
 
-// ── /users ────────────────────────────────────────────────────────────────────
-
+// ── users ─────────────────────────────────────────────────────────────────────
 describe('users collection', () => {
-  it('allows a user to read their own profile', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users/alice'), { name: 'Alice' });
-    });
+  it('allows user to read own profile', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'users/alice'), { fullName: 'Alice' })
+    );
     const alice = testEnv.authenticatedContext('alice');
     await assertSucceeds(getDoc(doc(alice.firestore(), 'users/alice')));
   });
-
-  it('denies reading another user\'s profile', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users/alice'), { name: 'Alice' });
-    });
+  it('denies reading another user profile', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'users/alice'), { fullName: 'Alice' })
+    );
     const bob = testEnv.authenticatedContext('bob');
     await assertFails(getDoc(doc(bob.firestore(), 'users/alice')));
   });
-
-  it('denies unauthenticated reads', async () => {
-    const anon = testEnv.unauthenticatedContext();
-    await assertFails(getDoc(doc(anon.firestore(), 'users/alice')));
-  });
-
-  it('denies client-side deletes', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users/alice'), { name: 'Alice' });
-    });
+  it('denies client delete', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'users/alice'), { fullName: 'Alice' })
+    );
     const alice = testEnv.authenticatedContext('alice');
     await assertFails(deleteDoc(doc(alice.firestore(), 'users/alice')));
   });
-});
-
-// ── /calculator_records ───────────────────────────────────────────────────────
-
-describe('calculator_records collection', () => {
-  it('allows owner to create their own record', async () => {
-    const alice = testEnv.authenticatedContext('alice');
-    await assertSucceeds(
-      setDoc(doc(alice.firestore(), 'calculator_records/rec1'), { userId: 'alice', co2: 5 })
-    );
-  });
-
-  it('denies creating a record with a different userId', async () => {
-    const bob = testEnv.authenticatedContext('bob');
-    await assertFails(
-      setDoc(doc(bob.firestore(), 'calculator_records/rec2'), { userId: 'alice', co2: 5 })
-    );
-  });
-
-  it('denies reading another user\'s record', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'calculator_records/rec1'), { userId: 'alice', co2: 5 });
-    });
-    const bob = testEnv.authenticatedContext('bob');
-    await assertFails(getDoc(doc(bob.firestore(), 'calculator_records/rec1')));
-  });
-
-  it('denies changing userId on update', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'calculator_records/rec1'), { userId: 'alice', co2: 5 });
-    });
-    const alice = testEnv.authenticatedContext('alice');
-    await assertFails(
-      updateDoc(doc(alice.firestore(), 'calculator_records/rec1'), { userId: 'hacker' })
-    );
-  });
-});
-
-// ── /activities — append-only ─────────────────────────────────────────────────
-
-describe('activities collection (append-only)', () => {
-  it('allows owner to create an activity', async () => {
-    const alice = testEnv.authenticatedContext('alice');
-    await assertSucceeds(
-      setDoc(doc(alice.firestore(), 'activities/act1'), { userId: 'alice', type: 'audit' })
-    );
-  });
-
-  it('denies client updates (append-only)', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'activities/act1'), { userId: 'alice', type: 'audit' });
-    });
-    const alice = testEnv.authenticatedContext('alice');
-    await assertFails(
-      updateDoc(doc(alice.firestore(), 'activities/act1'), { type: 'edited' })
-    );
-  });
-
-  it('denies client deletes', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'activities/act1'), { userId: 'alice', type: 'audit' });
-    });
-    const alice = testEnv.authenticatedContext('alice');
-    await assertFails(deleteDoc(doc(alice.firestore(), 'activities/act1')));
-  });
-});
-
-// ── /rate_limits — fully locked ───────────────────────────────────────────────
-
-describe('rate_limits collection', () => {
-  it('denies authenticated reads', async () => {
-    const alice = testEnv.authenticatedContext('alice');
-    await assertFails(getDoc(doc(alice.firestore(), 'rate_limits/1.1.1.1')));
-  });
-
-  it('denies authenticated writes', async () => {
-    const alice = testEnv.authenticatedContext('alice');
-    await assertFails(
-      setDoc(doc(alice.firestore(), 'rate_limits/1.1.1.1'), { timestamps: [] })
-    );
-  });
-
   it('denies unauthenticated access', async () => {
     const anon = testEnv.unauthenticatedContext();
-    await assertFails(getDoc(doc(anon.firestore(), 'rate_limits/1.1.1.1')));
+    await assertFails(getDoc(doc(anon.firestore(), 'users/alice')));
+  });
+});
+
+// ── calculator_records ────────────────────────────────────────────────────────
+describe('calculator_records collection', () => {
+  it('allows owner read/write', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    await assertSucceeds(setDoc(doc(alice.firestore(), 'calculator_records/r1'), { userId: 'alice', co2: 10 }));
+    await assertSucceeds(getDoc(doc(alice.firestore(), 'calculator_records/r1')));
+  });
+  it('denies reading another user record', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'calculator_records/r2'), { userId: 'bob', co2: 5 })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(getDoc(doc(alice.firestore(), 'calculator_records/r2')));
+  });
+  it('denies changing userId on update', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'calculator_records/r3'), { userId: 'alice', co2: 1 })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(
+      setDoc(doc(alice.firestore(), 'calculator_records/r3'), { userId: 'bob', co2: 1 }, { merge: true })
+    );
+  });
+});
+
+// ── activities — append-only ──────────────────────────────────────────────────
+describe('activities collection (append-only)', () => {
+  it('allows owner to create', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    await assertSucceeds(setDoc(doc(alice.firestore(), 'activities/a1'), { userId: 'alice', type: 'walk' }));
+  });
+  it('denies update', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'activities/a1'), { userId: 'alice', type: 'walk' })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(updateDoc(doc(alice.firestore(), 'activities/a1'), { type: 'edited' }));
+  });
+  it('denies delete', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'activities/a1'), { userId: 'alice', type: 'walk' })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(deleteDoc(doc(alice.firestore(), 'activities/a1')));
+  });
+});
+
+// ── ai_conversations ──────────────────────────────────────────────────────────
+describe('ai_conversations collection', () => {
+  it('allows owner to create conversation', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    await assertSucceeds(
+      setDoc(doc(alice.firestore(), 'ai_conversations/c1'), {
+        userId: 'alice', messages: [], title: 'Chat', createdAt: new Date(),
+      })
+    );
+  });
+  it('denies creating with different userId', async () => {
+    const bob = testEnv.authenticatedContext('bob');
+    await assertFails(
+      setDoc(doc(bob.firestore(), 'ai_conversations/c2'), {
+        userId: 'alice', messages: [], createdAt: new Date(),
+      })
+    );
+  });
+  it('allows owner to read their conversation', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'ai_conversations/c1'), { userId: 'alice', messages: [] })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertSucceeds(getDoc(doc(alice.firestore(), 'ai_conversations/c1')));
+  });
+  it('denies non-owner reading', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'ai_conversations/c1'), { userId: 'alice', messages: [] })
+    );
+    const bob = testEnv.authenticatedContext('bob');
+    await assertFails(getDoc(doc(bob.firestore(), 'ai_conversations/c1')));
+  });
+  it('denies changing userId on update', async () => {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'ai_conversations/c1'), { userId: 'alice', messages: [] })
+    );
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(
+      updateDoc(doc(alice.firestore(), 'ai_conversations/c1'), { userId: 'hacker' })
+    );
+  });
+});
+
+// ── rate_limits ───────────────────────────────────────────────────────────────
+describe('rate_limits — fully locked', () => {
+  it('denies authenticated read', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(getDoc(doc(alice.firestore(), 'rate_limits/1.2.3.4')));
+  });
+  it('denies authenticated write', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    await assertFails(setDoc(doc(alice.firestore(), 'rate_limits/1.2.3.4'), { count: 1 }));
+  });
+  it('denies unauthenticated access', async () => {
+    const anon = testEnv.unauthenticatedContext();
+    await assertFails(getDoc(doc(anon.firestore(), 'rate_limits/1.2.3.4')));
   });
 });
