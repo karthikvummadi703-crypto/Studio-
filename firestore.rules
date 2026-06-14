@@ -1,68 +1,79 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helper functions ──────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Caller is authenticated. */
     function isAuth() {
       return request.auth != null;
     }
 
-    /** Caller owns this document via the given uid field. */
     function isOwner(field) {
       return isAuth() && request.auth.uid == resource.data[field];
     }
 
-    /** Caller is creating a document they will own. */
     function isCreatingOwn(field) {
       return isAuth() && request.auth.uid == request.resource.data[field];
     }
 
-    /** The ownership field has not been changed in an update. */
     function ownerUnchanged(field) {
       return request.resource.data[field] == resource.data[field];
     }
 
-    // ── Collections ───────────────────────────────────────────────────────
+    // Prevents extra fields being injected by the client
+    function hasOnlyKeys(keys) {
+      return request.resource.data.keys().hasOnly(keys);
+    }
 
-    // Users — own profile only; deletes are server-side only.
+    // ── Collections ───────────────────────────────────────────────────────────
+
+    // Users — own profile only; client deletes forbidden.
     match /users/{userId} {
       allow read:   if isAuth() && request.auth.uid == userId;
-      allow create: if isAuth() && request.auth.uid == userId;
-      allow update: if isAuth() && request.auth.uid == userId;
+      allow create: if isAuth() && request.auth.uid == userId
+        && hasOnlyKeys(['fullName', 'email', 'greenPoints', 'sustainabilityScore',
+                        'level', 'createdAt', 'completedChallenges', 'photoURL']);
+      allow update: if isAuth() && request.auth.uid == userId
+        && hasOnlyKeys(['fullName', 'email', 'greenPoints', 'sustainabilityScore',
+                        'level', 'completedChallenges', 'photoURL', 'updatedAt']);
       allow delete: if false;
     }
 
-    // Calculator records — owner only; userId field is immutable after create.
+    // Calculator records — owner only; userId immutable after create.
     match /calculator_records/{recordId} {
       allow read:   if isOwner('userId');
-      allow create: if isCreatingOwn('userId');
-      allow update: if isOwner('userId') && ownerUnchanged('userId');
+      allow create: if isCreatingOwn('userId')
+        && hasOnlyKeys(['userId', 'co2', 'timestamp', 'breakdown', 'createdAt']);
+      allow update: if isOwner('userId') && ownerUnchanged('userId')
+        && hasOnlyKeys(['co2', 'timestamp', 'breakdown', 'updatedAt']);
       allow delete: if isOwner('userId');
     }
 
-    // Activities — append-only log; no client updates or deletes.
+    // Activities — append-only; no client updates or deletes.
     match /activities/{activityId} {
-      allow read:          if isOwner('userId');
-      allow create:        if isCreatingOwn('userId');
+      allow read:           if isOwner('userId');
+      allow create:         if isCreatingOwn('userId')
+        && hasOnlyKeys(['userId', 'type', 'description', 'pointsEarned', 'timestamp']);
       allow update, delete: if false;
     }
 
     // AI conversations — owner only; userId immutable.
     match /ai_conversations/{chatId} {
       allow read:   if isOwner('userId');
-      allow create: if isCreatingOwn('userId');
-      allow update: if isOwner('userId') && ownerUnchanged('userId');
+      allow create: if isCreatingOwn('userId')
+        && hasOnlyKeys(['userId', 'messages', 'title', 'createdAt']);
+      allow update: if isOwner('userId') && ownerUnchanged('userId')
+        && hasOnlyKeys(['messages', 'title', 'updatedAt']);
       allow delete: if isOwner('userId');
     }
 
-    // Rate limits — NO client access. Server-side SDK only.
+    // Rate limits — NO client access. Admin SDK only.
     match /rate_limits/{ip} {
       allow read, write: if false;
     }
 
-    // Deny everything else by default.
+    // Deny everything else.
     match /{document=**} {
       allow read, write: if false;
     }
