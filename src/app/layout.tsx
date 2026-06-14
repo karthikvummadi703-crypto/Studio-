@@ -38,8 +38,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout — provides fonts, global providers, and the skip-to-content link.
- * The <main id="main-content"> target lives inside GlobalNavigation.
+ * Root layout — fonts, providers, skip link, and ARIA live regions.
  */
 export default function RootLayout({
   children,
@@ -51,10 +50,30 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="font-body text-foreground min-h-screen relative overflow-x-hidden selection:bg-primary/30">
-        {/* Skip link — invisible until focused by keyboard; targets <main id="main-content"> */}
+
+        {/* Skip link — invisible until keyboard focused */}
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+
+        {/* Announces AI streaming responses to screen readers */}
+        <div
+          id="ai-response-live-region"
+          role="status"
+          aria-live="polite"
+          aria-atomic="false"
+          className="sr-only"
+        />
+
+        {/* Announces errors and alerts to screen readers */}
+        <div
+          id="error-live-region"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          className="sr-only"
+        />
+
         <FirebaseClientProvider>
           <ErrorBoundary>
             <GlobalNavigation>
