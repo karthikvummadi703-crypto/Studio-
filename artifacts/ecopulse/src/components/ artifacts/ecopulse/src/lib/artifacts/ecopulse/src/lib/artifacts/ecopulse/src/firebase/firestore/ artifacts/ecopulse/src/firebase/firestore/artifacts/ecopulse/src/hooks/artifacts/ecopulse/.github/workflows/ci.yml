@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Typecheck and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck
+        run: pnpm run typecheck
+
+      - name: Run tests with coverage
+        run: pnpm --filter @workspace/ecopulse run test:coverage
+        env:
+          VITE_FIREBASE_API_KEY: test-key
+          VITE_FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "123456789"
+          VITE_FIREBASE_APP_ID: "1:123:web:abc"
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: artifacts/ecopulse/coverage/
+          retention-days: 7
