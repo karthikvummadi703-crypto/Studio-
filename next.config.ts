@@ -2,23 +2,34 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // IMPORTANT: false so TypeScript errors are caught at build time, not at runtime.
+    // ignoreBuildErrors: true was causing Vercel deployment failures.
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    // IMPORTANT: false so ESLint errors don't silently pass through builds.
+    ignoreDuringBuilds: false,
   },
   compress: true,
   poweredByHeader: false,
-  serverExternalPackages: ['genkit', '@genkit-ai/google-genai', '@opentelemetry/sdk-node'],
+
+  // Required for Genkit to work on Vercel (keeps these server-side only)
+  serverExternalPackages: [
+    'genkit',
+    '@genkit-ai/google-genai',
+    '@opentelemetry/sdk-node',
+    'firebase-admin',
+  ],
+
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Frame-Options',       value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Referrer-Policy',        value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy',     value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
@@ -41,7 +52,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
   experimental: {
+    // Prevents hydration mismatch errors with CSR-only components on Vercel
+    missingSuspenseWithCSRBailout: false,
     optimizePackageImports: [
       'lucide-react',
       'recharts',
@@ -51,6 +65,7 @@ const nextConfig: NextConfig = {
       '@/components/ui',
     ],
   },
+
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
